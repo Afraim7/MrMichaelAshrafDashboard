@@ -1,0 +1,42 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mrmichaelashrafdashboard/Core/Config/app_radii.dart';
+import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
+
+class AppBottomSheet {
+  final Widget child;
+  AppBottomSheet({required this.child});
+
+  Future<void> showBottomSheet(BuildContext context) async {
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.appTransperent,
+      elevation: 0,
+      isScrollControlled: true,
+      isDismissible: true,
+      showDragHandle: true,
+      enableDrag: true,
+      builder: (context) {
+        return Container(
+          width: AppHelper.screenWidth,
+          padding: EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
+          constraints: BoxConstraints(
+            minHeight: AppHelper.screenHeight * 0.4,
+            maxHeight: AppHelper.screenHeight * 0.75,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceDark,
+            borderRadius: AppRadii.elliptical(
+              topLeftX: 50.r,
+              topLeftY: 35.r,
+              topRightX: 50.r,
+              topRightY: 35.r,
+            ),
+          ),
+          child: child,
+        );
+      },
+    );
+  }
+}
