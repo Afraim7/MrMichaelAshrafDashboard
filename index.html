@@ -1,19 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="/MrMichaelAshrafDashboard/">
 
   <meta charset="UTF-8">
@@ -21,35 +8,49 @@
 
   <title>Mr Michael Ashraf – Admin Dashboard</title>
   <meta name="description" content="Manage all History & Geography course content for the official Mr Michael Ashraf learning platform. Control lessons, exams, highlights, and student progress.">
-  
-  <meta property="og:title" content="Mr Michael Ashraf Admin Dashboard – Manage Courses, Exams, highlights & Students" />
-  <meta property="og:description" content="Full control panel for the official Mr Michael Ashraf educational app. Manage lessons, exams, highlights, and platform content." />
-  <meta property="og:image" content="https://afraim7.github.io/MrMichaelAshrafDashboard/logo_preview.png">
-  <meta property="og:url" content="https://afraim7.github.io/MrMichaelAshrafDashboard/">
-  <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Mr Michael Ashraf Admin Dashboard – Manage Courses, Exams, highlights & Students">
-  <meta name="twitter:description" content="Full control panel for the official Mr Michael Ashraf educational app. Manage lessons, exams, highlights, and platform content." />
-  <meta name="twitter:image" content="https://afraim7.github.io/MrMichaelAshrafDashboard/logo_preview.png">
-  <meta name="theme-color" content="#090909" />
 
+  <!-- ===== SOCIAL META TAGS (FULLY FIXED FOR WHATSAPP / TELEGRAM / TWITTER / IMESSAGE / DISCORD) ===== -->
+  <meta property="og:title" content="Mr Michael Ashraf Admin Dashboard – Manage Courses, Exams, Highlights & Students" />
+  <meta property="og:description" content="Full control panel for the official Mr Michael Ashraf educational app. Manage lessons, exams, highlights, and platform content." />
+  <meta property="og:url" content="https://afraim7.github.io/MrMichaelAshrafDashboard/" />
+  <meta property="og:type" content="website" />
+
+  <!-- Main Preview Image -->
+  <meta property="og:image" content="https://afraim7.github.io/MrMichaelAshrafDashboard/logo_preview.png" />
+  <meta property="og:image:secure_url" content="https://afraim7.github.io/MrMichaelAshrafDashboard/logo_preview.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Mr Michael Ashraf Admin Dashboard – Manage Courses, Exams, Highlights & Students" />
+  <meta name="twitter:description" content="Full control panel for the official Mr Michael Ashraf educational app. Manage lessons, exams, highlights, and platform content." />
+  <meta name="twitter:image" content="https://afraim7.github.io/MrMichaelAshrafDashboard/logo_preview.png" />
+
+  <!-- Apple / iMessage -->
+  <meta name="image" content="https://afraim7.github.io/MrMichaelAshrafDashboard/logo_preview.png" />
+
+  <!-- Theme -->
+  <meta name="theme-color" content="#090909" />
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <link rel="manifest" href="manifest.json">
 </head>
+
 <body>
   <script src='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.mjs' type='module'></script>
   <script type='module'>
-  var { pdfjsLib } = globalThis;
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.mjs';
-
-  var pdfRenderOptions = {
-    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/cmaps/',
-    cMapPacked: true,
-  }
+    var { pdfjsLib } = globalThis;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.mjs';
+    var pdfRenderOptions = {
+      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/cmaps/',
+      cMapPacked: true,
+    }
   </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
