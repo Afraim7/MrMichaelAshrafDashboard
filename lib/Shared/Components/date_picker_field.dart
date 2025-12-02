@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_insets.dart';
 import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
 
 class DatePickerField extends StatelessWidget {
@@ -25,7 +24,7 @@ class DatePickerField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: AppInsets.symmetric(vertical: 9),
+      padding: const EdgeInsets.symmetric(vertical: 9),
       child: InkWell(
         onTap: () => _selectDate(context),
         borderRadius: BorderRadius.circular(18),

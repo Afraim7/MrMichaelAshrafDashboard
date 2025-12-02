@@ -91,7 +91,7 @@ class _AppSubButtonState extends State<AppSubButton> {
           key: ValueKey("loading"),
           height: 20,
           width: 20,
-          child: AppHelper.appCircularInd,
+          child: DashboardHelper.appCircularInd,
         );
       case SubButtonState.done:
         return Icon(
@@ -125,13 +125,13 @@ class _AppSubButtonState extends State<AppSubButton> {
       case SubButtonState.idle:
         return widget.backgroundColor;
       case SubButtonState.loading:
-        return AppColors.cardDark.withOpacity(0.9);
+        return AppColors.cardDark.withAlpha(230);
       case SubButtonState.countingDown:
-        return AppColors.cardDark.withOpacity(0.9);
+        return AppColors.cardDark.withAlpha(230);
       case SubButtonState.done:
-        return AppColors.pastelGreen.withOpacity(0.9);
+        return AppColors.pastelGreen.withAlpha(230);
       case SubButtonState.error:
-        return AppColors.tomatoRed.withOpacity(0.9);
+        return AppColors.tomatoRed.withAlpha(230);
     }
   }
 }

@@ -2,7 +2,6 @@ class AppAssets {
   AppAssets._();
 
   static const animations = _Animations();
-  static const icons = _Icons();
   static const images = _Images();
   static const pdfs = _Pdfs();
 }
@@ -18,6 +17,10 @@ class _Animations {
   final String menuTap = 'assets/animations/Menu.json';
   final String examsTap = 'assets/animations/examsTap.json';
   final String emptyExamsList = 'assets/animations/empty exams list.json';
+  final String emptyHighlightList =
+      'assets/animations/Empty Highlight List.json';
+  final String emptyStudentsList =
+      'assets/animations/Empty Students List.json';
   final String noConnection = 'assets/animations/No Internet Connection.json';
   final String noEnrolledCourses = 'assets/animations/No Enrolled Courses.json';
   final String notificationTap = 'assets/animations/Notification Tap.json';
@@ -36,31 +39,13 @@ class _Animations {
   final String checkedSuccess = 'assets/animations/checked.json';
 }
 
-class _Icons {
-  const _Icons();
-  final String pdf = 'assets/icons/pdfIcon.png';
-  final String youtube = 'assets/icons/youtube.png';
-  final String facebook = 'assets/icons/facebook.png';
-  final String google = 'assets/icons/google.png';
-  final String whatsapp = 'assets/icons/whatsapp.png';
-  final String apple = 'assets/icons/apple.png';
-  final String gmail = 'assets/icons/gmail.png';
-  final String instagram = 'assets/icons/instagram.png';
-}
-
 class _Images {
   const _Images();
   final String courseDefault = 'assets/images/course_placeholder.jpeg';
-  final String highlightsUnitHeader =
-      'assets/images/highlights_unit_header.jpeg';
-  final String visionIntro = 'assets/images/vision intro.png';
-  final String michaelCard = 'assets/images/michaelcard.png';
-  final String boardingM1 = 'assets/images/m1.png';
-  final String boardingM2 = 'assets/images/m2.png';
-  final String boardingM3 = 'assets/images/m3.png';
   final String maleStudent = 'assets/images/malestudent.png';
   final String femaleStudent = 'assets/images/femalestudent.png';
-  final String admin = 'assets/images/teacher_admin.png';
+  final String adminMale = 'assets/images/teacher_admin.png';
+  final String adminFemale = 'assets/images/teacher_admin_female.png';
   final String defaultAvatar = 'assets/images/defaultavatar.jpg';
 }
 

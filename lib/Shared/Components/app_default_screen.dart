@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_insets.dart';
 import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
 
 class AppDefaultScreen extends StatelessWidget {
@@ -17,7 +16,7 @@ class AppDefaultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: AppInsets.all(30),
+        padding: EdgeInsets.all(30),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -25,7 +24,7 @@ class AppDefaultScreen extends StatelessWidget {
           children: [
             LottieBuilder.asset(
               animationPath,
-              height: 250,
+              height: 300,
               fit: BoxFit.cover,
               animate: true,
               repeat: false,
@@ -34,7 +33,7 @@ class AppDefaultScreen extends StatelessWidget {
             const SizedBox(height: 30),
 
             Padding(
-              padding: AppInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.symmetric(horizontal: 10),
               child: Text(
                 message,
                 textAlign: TextAlign.center,

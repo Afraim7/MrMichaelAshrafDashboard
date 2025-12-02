@@ -269,8 +269,8 @@ class AppTypography {
   }
 
   /// Get text style with reduced opacity for disabled states
-  static TextStyle withReducedOpacity(TextStyle baseStyle, double opacity) {
-    return baseStyle.copyWith(color: baseStyle.color?.withOpacity(opacity));
+  static TextStyle withReducedOpacity(TextStyle baseStyle, int opacity) {
+    return baseStyle.copyWith(color: baseStyle.color?.withAlpha((opacity)));
   }
 
   /// Get text style for different emphasis levels
@@ -279,7 +279,7 @@ class AppTypography {
       case EmphasisLevel.low:
         return baseStyle.copyWith(
           fontWeight: FontWeight.w400,
-          color: baseStyle.color?.withOpacity(0.6),
+          color: baseStyle.color?.withAlpha(153),
         );
       case EmphasisLevel.medium:
         return baseStyle.copyWith(fontWeight: FontWeight.w500);
@@ -307,7 +307,7 @@ extension TextStyleExtensions on TextStyle {
   }
 
   /// Apply reduced opacity to existing text style
-  TextStyle withReducedOpacity(double opacity) {
+  TextStyle withReducedOpacity(int opacity) {
     return AppTypography.withReducedOpacity(this, opacity);
   }
 }

@@ -1,10 +1,12 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
+import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
 import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/Cubits/AdminAuth/admin_auth_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Splash/Logic/app_flow_cubit.dart';
+import 'package:mrmichaelashrafdashboard/Features/Authentication/Logic/admin_auth_cubit.dart';
+import 'package:mrmichaelashrafdashboard/Features/Splash/Logic/dashboard_flow_cubit.dart';
 import 'package:mrmichaelashrafdashboard/Features/Splash/Logic/dashboard_flow_state.dart';
 
 class Splash extends StatefulWidget {
@@ -15,65 +17,34 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> {
-  bool _navigated = false;
-  bool _canNavigate = false;
-  Timer? _splashTimer;
-  VoidCallback? _pendingNavigation;
-
-  void _navigateOnce(VoidCallback action) {
-    if (_navigated) return;
-    
-    if (!_canNavigate) {
-      // Store the navigation action to execute after timer completes
-      _pendingNavigation = action;
-      return;
-    }
-    
-    _navigated = true;
-    _splashTimer?.cancel();
-    action();
-  }
-
-  void _executePendingNavigation() {
-    if (_pendingNavigation != null && !_navigated) {
-      _navigated = true;
-      _pendingNavigation!();
-      _pendingNavigation = null;
-    }
-  }
+  // Caches the latest auth state so we only route once the cubit is ready.
+  AdminAuthState? _latestAuthState;
 
   @override
   void initState() {
     super.initState();
-
-    // Start 3-second timer
-    _splashTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _canNavigate = true;
-        });
-        // Execute any pending navigation
-        _executePendingNavigation();
-      }
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authState = context.read<AdminAuthCubit>().state;
-
-      final isLogged = authState is AdminAuthenticated;
-      final isVerified = isLogged ? (authState.admin.emailVerified) : false;
-
-      context.read<DashboardFlowCubit>().checkDashboardFlow(
-        isLoggedIn: isLogged,
-        isEmailVerified: isVerified,
-      );
-    });
+    _latestAuthState = context.read<AdminAuthCubit>().state;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _runFlowCheck());
   }
 
-  @override
-  void dispose() {
-    _splashTimer?.cancel();
-    super.dispose();
+  void _runFlowCheck() {
+    final authState = _latestAuthState ?? context.read<AdminAuthCubit>().state;
+
+    // Skip routing while the auth cubit is still determining the user state.
+    if (authState is AdminAuthInitial ||
+        authState is AdminLoggingIn ||
+        authState is AdminLoggingOut ||
+        authState is AdminLoading) {
+      return;
+    }
+
+    final isLoggedIn = authState is AdminAuthenticated;
+    final isVerified = isLoggedIn ? authState.admin.emailVerified : false;
+
+    context.read<DashboardFlowCubit>().checkDashboardFlow(
+          isLoggedIn: isLoggedIn,
+          isEmailVerified: isVerified,
+        );
   }
 
   @override
@@ -82,67 +53,93 @@ class _SplashState extends State<Splash> {
       backgroundColor: AppColors.appBlack,
       body: MultiBlocListener(
         listeners: [
-          // AUTH LISTENER
           BlocListener<AdminAuthCubit, AdminAuthState>(
-            listener: (context, state) {
-              final flow = context.read<DashboardFlowCubit>();
+            listener: (context, authState) {
+              _latestAuthState = authState;
 
-              if (state is AdminUnauthenticated) {
-                flow.checkDashboardFlow(
-                  isLoggedIn: false,
-                  isEmailVerified: false,
-                );
-              }
-
-              if (state is AdminAuthenticated) {
-                flow.checkDashboardFlow(
-                  isLoggedIn: true,
-                  isEmailVerified: state.admin.emailVerified,
-                );
+              if (authState is AdminAuthenticated ||
+                  authState is AdminUnauthenticated ||
+                  authState is AdminError) {
+                _runFlowCheck();
               }
             },
           ),
-
-          // FLOW LISTENER
           BlocListener<DashboardFlowCubit, DashboardFlowState>(
             listener: (context, state) {
               if (state is DashboardFlowAdminLogin) {
-                _navigateOnce(() {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/admin-login',
-                    (_) => false,
-                  );
-                });
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/admin-login',
+                  (_) => false,
+                );
               }
 
               if (state is DashboardFlowControlPanel) {
-                _navigateOnce(() {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/dashboard-home',
-                    (_) => false,
-                  );
-                });
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/dashboard-home',
+                  (_) => false,
+                );
               }
 
               if (state is DashboardFlowError) {
-                AppHelper.showErrorBar(context, error: state.message);
+                DashboardHelper.showErrorBar(context, error: state.message);
               }
             },
           ),
         ],
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(child: Center(child: AppHelper.appLogo)),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 40),
-                child: AppHelper.appCircularInd,
+        child: BlocBuilder<DashboardFlowCubit, DashboardFlowState>(
+          builder: (context, state) {
+            final bool isError = state is DashboardFlowError;
+
+            Widget loader;
+
+            if (state is DashboardFlowChecking) {
+              loader = DashboardHelper.appCircularInd;
+            } else if (isError) {
+              loader = Column(
+                children: [
+                  SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: Lottie.asset(
+                      AppAssets.animations.redWarning,
+                      repeat: false,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  GestureDetector(
+                    onTap: _runFlowCheck,
+                    child: Text(
+                      "المحاولة مرة أخرى",
+                      style: GoogleFonts.scheherazadeNew(
+                        color: AppColors.neutral100,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        height: 2,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              loader = const SizedBox.shrink();
+            }
+
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(child: Center(child: DashboardHelper.appLogo)),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 70),
+                    child: loader,
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

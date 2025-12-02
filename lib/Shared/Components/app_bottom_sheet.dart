@@ -19,11 +19,11 @@ class AppBottomSheet {
       enableDrag: true,
       builder: (context) {
         return Container(
-          width: AppHelper.screenWidth,
+          width: DashboardHelper.screenWidth,
           padding: EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
           constraints: BoxConstraints(
-            minHeight: AppHelper.screenHeight * 0.4,
-            maxHeight: AppHelper.screenHeight * 0.75,
+            minHeight: DashboardHelper.screenHeight * 0.4,
+            maxHeight: DashboardHelper.screenHeight * 0.85,
           ),
           decoration: BoxDecoration(
             color: AppColors.surfaceDark,

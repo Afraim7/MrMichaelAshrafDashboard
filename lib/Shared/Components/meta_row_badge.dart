@@ -54,7 +54,7 @@ class MetaRowBadge extends StatelessWidget {
           Flexible(
             child: SelectableText(
               data!,
-              selectionColor: AppColors.skyBlue.withOpacity(0.5),
+              selectionColor: AppColors.skyBlue.withAlpha(128),
               style: GoogleFonts.scheherazadeNew(
                 textStyle: TextStyle(
                   color: dataColor,

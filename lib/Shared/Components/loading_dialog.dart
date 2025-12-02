@@ -26,7 +26,7 @@ class LoadingDialog extends StatelessWidget {
               ),
             ],
           ),
-          child: Center(child: AppHelper.appCircularInd),
+          child: Center(child: DashboardHelper.appCircularInd),
         ),
       ),
     );

@@ -1,16 +1,10 @@
 class AppStrings {
   AppStrings._();
 
-  static final appName = _AppName();
   static final errors = _Errors();
   static final emptyStates = _EmptyStates();
   static final success = _Success();
   static final general = _General();
-}
-
-class _AppName {
-  const _AppName();
-  final String name = "مستر مايكل أشرف";
 }
 
 class _Errors {
@@ -105,19 +99,14 @@ class _EmptyStates {
 class _Success {
   const _Success();
   final String examPublished = 'تم نشر الامتحان بنجاح';
-  final String examUpdated = 'تم حفظ التحديثات بنجاح';
+  final String updatesSaved = 'تم حفظ التحديثات بنجاح';
   final String examDeleted = 'تم حذف الامتحان بنجاح';
   final String coursePublished = 'تم نشر الكورس بنجاح';
-  final String courseUpdated = 'تم حفظ التحديثات بنجاح';
   final String courseDeleted = 'تم حذف الكورس بنجاح';
   final String highlightPublished =
       'ٌتم النشر بنجاح يمكن للطلبة الان الأطلاع علي ما نشرته من خلال التطبيق';
   final String highlightDeleted = 'تم حذف الملاحظة بنجاح';
-  final String courseEnrolled = 'تم الاشتراك بنجاح 🎉';
-  final String passwordChanged = 'تم تغيير كلمة المرور بنجاح ✅';
-  final String commentAdded = 'تم إضافة التعليق بنجاح';
   final String commentDeleted = 'تم حذف التعليق بنجاح';
-  final String unenrollSuccess = 'تم إلغاء الاشتراك بنجاح';
 }
 
 class _General {
@@ -150,77 +139,4 @@ class _General {
     'نوفمبر',
     'ديسمبر',
   ];
-
-  String generateAuthErrorMessage({required String errorCode}) {
-    final code = errorCode.trim().toLowerCase();
-    switch (code) {
-      case 'invalid-email':
-        return 'هذا الأيميل غير صالح نأكد من كنابتة بشكل صحيح';
-      case 'user-disabled':
-        return 'للاسف تم ايقاف هذا الحساب';
-      case 'user-not-found':
-        return 'لا يوجد مستخدم مسجَّل بهذا الأيميل.';
-      case 'wrong-password':
-      case 'invalid-password':
-        return 'كلمة السر غير صحيحة. يرجى المحاولة مرة أخرى.';
-      case 'invalid-credential':
-        return 'البريد الإلكتروني أو كلمة السر غير صحيحة.';
-      case 'operation-not-allowed':
-        return 'طريقة تسجيل الدخول هذه غير مفعّلة لدى التطبيق جرب تسجيل الدخول بالأيميل وكلمة السر.';
-      case 'too-many-requests':
-        return '';
-      case 'network-request-failed':
-        return 'يوجد مشكلة في الأتصال بالأنترنت يرجي التأكد من أتصالك والمحاولة مرة أخري';
-      case 'internal-error':
-        return 'خطأ داخلي غير متوقع. يرجي المحاولة لاحقًا.';
-      case 'timeout':
-        return 'انتهت مهلة العملية. تحقّق من الشبكة ثم حاول مجددًا.';
-      case 'unknown':
-        return 'حدث خطأ غير متوقع. حاول مرة أخرى لاحقًا.';
-      case 'email-already-in-use':
-        return 'هذا الأيميل مستخدم بالفعل. جرّب تسجيل الدخول أو استخدم ايميلا آخر.';
-      case 'weak-password':
-        return 'كلمة السر ضعيفة. اختر كلمة أقوى يجب أن تتضمن حروف وأرقام ورموز وان لا تقل عن 8 أحرف.';
-      case 'missing-password':
-        return 'من فضلك قم بأدخال كلمة السر.';
-      case 'missing-email':
-        return 'من فضلك قم بأدخال الايميل لإرسال رابط إعادة تعيين كلمة السر.';
-      case 'invalid-login-credentials':
-        return 'البريد الإلكتروني أو كلمة المرور غير صحيحة، أو انتهت صلاحية بيانات الاعتماد.';
-      case 'user-mismatch':
-        return 'بيانات الاعتماد لا تتطابق مع المستخدم الحالي.';
-      case 'user-token-expired':
-        return 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول من جديد.';
-      case 'app-not-authorized':
-        return 'التطبيق غير مخوَّل لاستخدام Firebase Auth.';
-      case 'invalid-api-key':
-        return 'مفتاح API غير صالح لتطبيق Firebase.';
-      case 'quota-exceeded':
-        return 'تم تجاوز الحد المسموح. حاول لاحقًا.';
-      case 'code-expired':
-        return 'انتهت صلاحية رمز التحقق. أعد المحاولة مرة أخري.';
-      case 'invalid-verification-code':
-        return 'رمز التحقق غير صحيح. تأكّد من الرمز وحاول مرة أخري.';
-      case 'invalid-verification-id':
-        return 'معرّف التحقق غير صالح.';
-      case 'captcha-check-failed':
-        return 'فشل التحقق الآلي (CAPTCHA). أعد المحاولة.';
-      case 'account-exists-with-different-credential':
-        return 'هناك حساب بنفس البريد ولكن بطريقة تسجيل مختلفة. جرّب "نسيت كلمة المرور".';
-      case 'invalid-continue-uri':
-        return 'رابط المتابعة غير صالح. راجع الإعدادات.';
-      case 'missing-continue-uri':
-        return 'رابط المتابعة مفقود. راجع الإعدادات.';
-      case 'missing-android-pkg-name':
-        return 'اسم حزمة أندرويد مفقود لهذا الإعداد. راجع الإعدادات.';
-      case 'missing-ios-bundle-id':
-        return 'معرّف حزمة iOS مفقود لهذا الإعداد. راجع الإعدادات.';
-      case 'unauthorized-continue-uri':
-        return 'رابط المتابعة غير مخوّل. تأكد من إعدادات قائمة النطاقات المسموح بها.';
-      case 'requires-recent-login':
-        return 'للأمان، سجّل الدخول من جديد ثم أعد المحاولة.';
-      default:
-        return 'حدث خطأ غير متوقع. حاول مرة أخرى.';
-    }
-  }
 }

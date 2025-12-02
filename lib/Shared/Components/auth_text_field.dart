@@ -54,7 +54,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
         child: Theme(
           data: ThemeData(
             textSelectionTheme: TextSelectionThemeData(
-              selectionColor: Colors.blue.shade700.withOpacity(0.25),
+              selectionColor: Colors.blue.shade700.withAlpha(64),
             ),
           ),
           child: TextFormField(

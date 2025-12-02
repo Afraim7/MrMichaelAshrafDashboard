@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Presentation/Screens/dashboard_home_center.dart';
+import 'package:mrmichaelashrafdashboard/Features/Admin%20Dashboard/Presentation/Screens/dashboard_home_center.dart';
 import 'package:mrmichaelashrafdashboard/Features/Splash/Presentation/splash.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Presentation/Screens/admin_login.dart';
+import 'package:mrmichaelashrafdashboard/Features/Authentication/Presentation/Screens/admin_login.dart';
 
 class AppRoutes {
   static const splash = '/splash';

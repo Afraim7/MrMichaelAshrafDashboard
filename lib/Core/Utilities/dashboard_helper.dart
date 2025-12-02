@@ -10,21 +10,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
 import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
 import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/Cubits/AdminFunctions/admin_functions_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Presentation/Widgets/courses_manager.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Presentation/Widgets/exam_results_sheet.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Presentation/Widgets/exams_manager.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Presentation/Widgets/highlights_manager.dart';
+import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/admin_functions_cubit.dart';
+import 'package:mrmichaelashrafdashboard/Features/Courses/Presentation/Widgets/courses_manager.dart';
+import 'package:mrmichaelashrafdashboard/Features/Exams/Presentation/Widgets/exam_results_sheet.dart';
+import 'package:mrmichaelashrafdashboard/Features/Exams/Presentation/Widgets/exams_manager.dart';
+import 'package:mrmichaelashrafdashboard/Features/Highlights/Presentation/Widgets/highlights_manager.dart';
 import 'package:mrmichaelashrafdashboard/Shared/Components/app_bottom_sheet.dart';
 import 'package:mrmichaelashrafdashboard/Shared/Components/app_dialog.dart';
 import 'package:mrmichaelashrafdashboard/Shared/Components/app_snack_bar.dart';
 import 'package:mrmichaelashrafdashboard/Shared/Components/loading_dialog.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Models/course.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Models/exam.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Models/highlight.dart';
+import 'package:mrmichaelashrafdashboard/Features/Courses/Data/Models/course.dart';
+import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/exam.dart';
+import 'package:mrmichaelashrafdashboard/Features/Highlights/Data/Models/highlight.dart';
 
-class AppHelper {
-  AppHelper._();
+class DashboardHelper {
+  DashboardHelper._();
 
   // Screen Dimensions
   static double screenHeight = 1.sh;
@@ -75,10 +75,7 @@ class AppHelper {
       systemOverlayStyle: SystemUiOverlayStyle.light,
       leadingWidth: 60.w,
       shape: Border(
-        bottom: BorderSide(
-          width: 0.2,
-          color: AppColors.appNavy.withOpacity(0.2),
-        ),
+        bottom: BorderSide(width: 0.2, color: AppColors.appNavy.withAlpha(50)),
       ),
       title: Text(
         screenTitle,
@@ -100,7 +97,7 @@ class AppHelper {
   }) {
     AppSnackBar(
       message: message,
-      backgroundColor: backgroundColor.withOpacity(0.9),
+      backgroundColor: backgroundColor.withAlpha(230),
       icon: icon,
     ).showSnackBar(context);
   }
@@ -108,7 +105,7 @@ class AppHelper {
   static void showErrorBar(BuildContext context, {required String error}) {
     AppSnackBar(
       message: error,
-      backgroundColor: AppColors.posterRed.withOpacity(0.9),
+      backgroundColor: AppColors.posterRed.withAlpha(230),
       icon: AppAssets.animations.redWarning,
     ).showSnackBar(context);
   }
@@ -116,7 +113,7 @@ class AppHelper {
   static void showSuccessBar(BuildContext context, {required String message}) {
     AppSnackBar(
       message: message,
-      backgroundColor: AppColors.pastelGreen.withOpacity(0.9),
+      backgroundColor: AppColors.pastelGreen.withAlpha(230),
       icon: AppAssets.animations.checkedSuccess,
     ).showSnackBar(context);
   }
@@ -152,7 +149,7 @@ class AppHelper {
   }) {
     AppSnackBar(
       message: message,
-      backgroundColor: AppColors.pastelGreen.withOpacity(0.9),
+      backgroundColor: AppColors.pastelGreen.withAlpha(230),
       icon: AppAssets.animations.verifiedSuccess,
     ).showSnackBar(context);
   }

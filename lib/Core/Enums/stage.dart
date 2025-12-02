@@ -1,6 +1,6 @@
 enum Stage {
   highSchool,
-  preparatorySchool,
+  // preparatorySchool,
 }
 
 extension StageX on Stage {
@@ -8,8 +8,8 @@ extension StageX on Stage {
     switch (this) {
       case Stage.highSchool:
         return 'المرحلة الثانوية';
-      case Stage.preparatorySchool:
-        return 'المرحلة الإعدادية';
+      // case Stage.preparatorySchool:
+      //   return 'المرحلة الإعدادية';
     }
   }
 
@@ -20,5 +20,3 @@ extension StageX on Stage {
     );
   }
 }
-
-

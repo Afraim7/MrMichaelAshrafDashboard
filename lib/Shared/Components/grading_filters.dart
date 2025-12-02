@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_insets.dart';
 import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
 import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
 
@@ -20,13 +19,13 @@ class _GrdadingFiltersState extends State<GradingFilters> {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(20);
     return Padding(
-      padding: AppInsets.symmetric(vertical: 15, horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 4),
       child: SizedBox(
         height: 50,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
-          padding: EdgeInsetsDirectional.only(start: 4, end: 4),
+          padding: const EdgeInsetsDirectional.only(start: 4, end: 4),
           itemCount: Grade.values.length,
           separatorBuilder: (_, _) => const SizedBox(width: 6),
           itemBuilder: (context, index) {
@@ -40,7 +39,7 @@ class _GrdadingFiltersState extends State<GradingFilters> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.royalBlue
-                      : AppColors.cardDark.withOpacity(0.4),
+                      : AppColors.cardDark.withAlpha(102),
                   borderRadius: radius,
                 ),
                 child: InkWell(
@@ -55,7 +54,10 @@ class _GrdadingFiltersState extends State<GradingFilters> {
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.fastEaseInToSlowEaseOut,
                     height: 50,
-                    padding: AppInsets.symmetric(horizontal: 25, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 25,
+                      vertical: 6,
+                    ),
                     alignment: Alignment.center,
                     child: AnimatedDefaultTextStyle(
                       duration: const Duration(milliseconds: 250),

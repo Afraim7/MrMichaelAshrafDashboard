@@ -16,13 +16,13 @@ class AppColors {
   static const Color neutral700 = Color(0xFF4A4A4A);
   static const Color neutral800 = Color(0xFF2B2B2B);
   static const Color neutral900 = Color(0xFF1A1A1A);
-  static Color neutra2000 = Colors.white.withOpacity(0.05);
+  static Color neutra2000 = Colors.white.withAlpha(13);
 
   // Transparent variations
   static const Color appTransperent = Colors.transparent;
-  static Color neutralOverlayLow = Colors.white.withOpacity(0.04);
-  static Color neutralOverlayMed = Colors.white.withOpacity(0.08);
-  static Color neutralOverlayHigh = Colors.white.withOpacity(0.12);
+  static Color neutralOverlayLow = Colors.white.withAlpha(10);
+  static Color neutralOverlayMed = Colors.white.withAlpha(20);
+  static Color neutralOverlayHigh = Colors.white.withAlpha(30);
 
   // Brand Core
   static const Color royalBlue = Color(0xFF2A49D4);

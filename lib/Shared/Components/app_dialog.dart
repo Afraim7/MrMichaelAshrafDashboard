@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_gaps.dart';
 import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
 import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
@@ -46,7 +45,7 @@ class AppDialog extends StatelessWidget {
       child: Container(
         constraints: BoxConstraints(
           maxWidth: 400,
-          maxHeight: AppHelper.screenHeight * 0.7,
+          maxHeight: DashboardHelper.screenHeight * 0.7,
           minWidth: 250,
         ),
         decoration: BoxDecoration(
@@ -58,12 +57,16 @@ class AppDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            AppGaps.v5,
-
             // ──────────────── Lottie Icon ────────────────
-            Lottie.asset(lottiePath, width: 60, height: 60, repeat: false),
-
-            AppGaps.v5,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Lottie.asset(
+                lottiePath,
+                width: 77,
+                height: 77,
+                repeat: false,
+              ),
+            ),
 
             // ──────────────── Header ────────────────
             Text(
@@ -77,7 +80,7 @@ class AppDialog extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
 
-            AppGaps.v2,
+            const SizedBox(height: 4),
 
             // ──────────────── Description ────────────────
             Text(
@@ -91,7 +94,7 @@ class AppDialog extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
 
-            AppGaps.v8,
+            const SizedBox(height: 15),
 
             Row(
               children: [

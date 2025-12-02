@@ -1,7 +1,6 @@
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_insets.dart';
 import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
 
 class PickerField extends StatelessWidget {
@@ -31,11 +30,11 @@ class PickerField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final defaultCollapsed = AppColors.neutra2000;
-    final defaultHighlight = AppColors.appNavy.withOpacity(0.1);
+    final defaultHighlight = AppColors.appNavy.withAlpha(25);
 
     return Padding(
       padding: isDecorated!
-          ? AppInsets.symmetric(vertical: 9)
+          ? const EdgeInsets.symmetric(vertical: 9)
           : EdgeInsets.zero,
       child: CustomDropdown<String>(
         items: pickerList.isNotEmpty ? pickerList : null,
@@ -48,13 +47,13 @@ class PickerField extends StatelessWidget {
 
           closedSuffixIcon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: AppColors.appWhite.withOpacity(0.9),
+            color: AppColors.appWhite.withAlpha(230),
             size: 24,
           ),
 
           expandedSuffixIcon: Icon(
             Icons.keyboard_arrow_up_rounded,
-            color: AppColors.appWhite.withOpacity(0.9),
+            color: AppColors.appWhite.withAlpha(230),
             size: 24,
           ),
 
@@ -63,7 +62,7 @@ class PickerField extends StatelessWidget {
               : null,
 
           closedFillColor: collapsedColor ?? defaultCollapsed,
-          expandedFillColor: AppColors.surfaceDark.withOpacity(0.95),
+          expandedFillColor: AppColors.surfaceDark.withAlpha(240),
 
           hintStyle: GoogleFonts.scheherazadeNew(
             fontSize: 20,

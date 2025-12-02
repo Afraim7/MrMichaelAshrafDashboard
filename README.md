@@ -1,16 +1,36 @@
-# mrmichaelashrafdashboard
+Mr. Michael Ashraf – Admin Dashboard (Flutter Web)
 
-A new Flutter project.
+A modern Flutter Web admin dashboard built for managing the official Mr. Michael Ashraf Educational Platform.
+The system enables full control over courses, exams, highlights, and student data through a fast, responsive, and dark-themed interface optimized for desktop browsers.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
+Features :
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Dashboard Overview
+View active exams, active highlights, and the top 7 most-enrolled courses.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Courses Management
+Create, edit, delete courses, lessons, and learning points with a structured workflow.
+
+Exams Management
+Build, edit, and organize exams with MCQ questions, timers, and date ranges.
+
+Highlights Management
+Publish, edit, and remove announcements tailored per grade.
+
+Students Management
+Browse students by grade or stage, view details, and apply filters for quick access.
+
+Admin Authentication
+Secure Firebase-based login system to ensure only authorized access.
+
+Responsive Layout
+Smooth experience across desktop, laptop, and tablet screen sizes.
+
+
+Technology Stack :
+Flutter Web
+Dart
+Firebase Authentication
+Cloud Firestore
