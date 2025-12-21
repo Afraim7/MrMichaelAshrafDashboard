@@ -427,7 +427,6 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
     try {
       return _firestoreRef
           .collection('users')
-          .where('role', isEqualTo: 'student')
           .snapshots()
           .map((snapshot) {
             final students = snapshot.docs
@@ -462,8 +461,6 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
       emit(AdminLoadingStudents());
       final snapshot = await _firestoreRef
           .collection('users')
-          .where('role', isEqualTo: 'student')
-          .where('emailVerified', isEqualTo: true)
           .get();
 
       final students = snapshot.docs
@@ -495,9 +492,7 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
       emit(AdminLoadingStudents());
       final snapshot = await _firestoreRef
           .collection('users')
-          .where('role', isEqualTo: 'student')
           .where('grade', isEqualTo: gradeName)
-          .where('emailVerified', isEqualTo: true)
           .get();
 
       final students = snapshot.docs
@@ -618,7 +613,6 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
     try {
       final snapshot = await _firestoreRef
           .collection('users')
-          .where('role', isEqualTo: 'student')
           .get();
       return snapshot.docs.length;
     } catch (e) {
@@ -635,7 +629,6 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
     try {
       final snapshot = await _firestoreRef
           .collection('users')
-          .where('role', isEqualTo: 'student')
           .where('emailVerified', isEqualTo: true)
           .get();
       return snapshot.docs.length;

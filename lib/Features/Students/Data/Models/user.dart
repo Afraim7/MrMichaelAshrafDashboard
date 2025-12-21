@@ -25,7 +25,7 @@ class AppUser {
   // will be set with some operations
   final bool?
   emailVerified; // once email is verified - right after creating the account so the default will be false till then
-  final String? photoURL; // static images path will be passed based on gender
+  final String photoURL; // static images path will be passed based on gender
 
   // will be calculated later
   final List<int> enrolledCoursesIDs;
