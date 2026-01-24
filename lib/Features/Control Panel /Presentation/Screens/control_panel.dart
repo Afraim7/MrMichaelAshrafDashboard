@@ -32,6 +32,8 @@ class _ControlPanelState extends State<ControlPanel> {
   // Keeps track of the ongoing dashboard refresh action.
   Future<void>? _refreshFuture;
 
+  // this is just a test comment for github desktop app
+
   @override
   void initState() {
     super.initState();
