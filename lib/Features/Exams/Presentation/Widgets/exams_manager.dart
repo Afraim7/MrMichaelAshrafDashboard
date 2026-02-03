@@ -547,6 +547,8 @@ class _ExamsManagerState extends State<ExamsManager> {
             ],
           ),
           child: ExpansionTile(
+            shape: const Border(),
+            collapsedShape: const Border(),
             iconColor: AppColors.skyBlue,
             collapsedIconColor: AppColors.skyBlue,
             title: Row(

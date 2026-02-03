@@ -8,7 +8,6 @@ import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/exam.dart';
 import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/exam_result.dart';
 import 'package:mrmichaelashrafdashboard/Features/Highlights/Data/Models/highlight.dart';
 import 'package:mrmichaelashrafdashboard/Features/Students/Data/Models/user.dart';
-
 part 'admin_functions_state.dart';
 
 class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
@@ -143,7 +142,6 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
   Future<void> saveCourseUpdates({required Course course}) async {
     try {
       emit(AdminSavingCourseUpdates());
-      // Use set with merge: true instead of update to handle nested objects properly
       await _firestoreRef
           .collection('courses')
           .doc(course.courseID)
@@ -425,27 +423,24 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
   // STUDENTS METHODS ----------------------------------------------------------
   Stream<List<AppUser>> fetchAllStudentsStream() {
     try {
-      return _firestoreRef
-          .collection('users')
-          .snapshots()
-          .map((snapshot) {
-            final students = snapshot.docs
-                .map((doc) {
-                  try {
-                    final data = doc.data();
-                    data['userID'] = doc.id;
-                    return AppUser.fromMap(data);
-                  } catch (e) {
-                    return null;
-                  }
-                })
-                .where((student) => student != null)
-                .cast<AppUser>()
-                .toList();
-            // Sort by userName alphabetically
-            students.sort((a, b) => a.userName.compareTo(b.userName));
-            return students;
-          });
+      return _firestoreRef.collection('users').snapshots().map((snapshot) {
+        final students = snapshot.docs
+            .map((doc) {
+              try {
+                final data = doc.data();
+                data['userID'] = doc.id;
+                return AppUser.fromMap(data);
+              } catch (e) {
+                return null;
+              }
+            })
+            .where((student) => student != null)
+            .cast<AppUser>()
+            .toList();
+        // Sort by userName alphabetically
+        students.sort((a, b) => a.userName.compareTo(b.userName));
+        return students;
+      });
     } catch (e) {
       emit(
         AdminFunctionsError(
@@ -459,9 +454,7 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
   Future<void> fetchAllStudents() async {
     try {
       emit(AdminLoadingStudents());
-      final snapshot = await _firestoreRef
-          .collection('users')
-          .get();
+      final snapshot = await _firestoreRef.collection('users').get();
 
       final students = snapshot.docs
           .map((doc) {
@@ -611,9 +604,7 @@ class AdminFunctionsCubit extends Cubit<AdminFunctionsState> {
   /// Get total count of all students in Firestore
   Future<int> getAllStudentsCount() async {
     try {
-      final snapshot = await _firestoreRef
-          .collection('users')
-          .get();
+      final snapshot = await _firestoreRef.collection('users').get();
       return snapshot.docs.length;
     } catch (e) {
       emit(

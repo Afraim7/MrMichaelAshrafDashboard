@@ -84,6 +84,11 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
             keyboardType: TextInputType.text,
             controller: widget.passwordController,
             validationFunction: AppValidator.validatePasswordLogin,
+            onFieldSubmitted: (_) {
+              if (_formKey.currentState!.validate()) {
+                widget.onAdminLogin();
+              }
+            },
           ),
 
           const SizedBox(height: 40),

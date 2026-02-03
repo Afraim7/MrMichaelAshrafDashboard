@@ -61,7 +61,7 @@ class _CoursesManagerState extends State<CoursesManager> {
       priceController = TextEditingController(text: '0');
       titleController.addListener(_onFieldChanged);
       descriptionController.addListener(_onFieldChanged);
-      // price is fixed to 0 (free courses), no need to track changes
+      priceController.addListener(_onFieldChanged);
 
       if (widget.existingCourse != null) {
         isEditing = false; // Start in view mode for existing courses
@@ -88,7 +88,7 @@ class _CoursesManagerState extends State<CoursesManager> {
       final c = widget.existingCourse!;
       titleController.text = c.title;
       descriptionController.text = c.description;
-      priceController.text = '0';
+      priceController.text = c.price.toString();
       selectedGrade = c.grade.label;
       selectedSubject = c.subject.label;
       selectedTeacher = c.teacher;
@@ -156,7 +156,12 @@ class _CoursesManagerState extends State<CoursesManager> {
       }
     }
 
-    const double price = 0;
+    double price = 0;
+    try {
+      price = double.parse(priceController.text.trim());
+    } catch (e) {
+      price = 0;
+    }
 
     // Convert selected grade label to Grade enum
     Grade selectedGradeEnum = Grade.allGrades;
@@ -517,11 +522,15 @@ class _CoursesManagerState extends State<CoursesManager> {
       const SizedBox(height: 8),
       Text('السعر \$', style: _labelStyle()),
       AuthTextField(
-        hint: 'مجاني',
+        hint: '0 \$',
         keyboardType: TextInputType.number,
         controller: priceController,
-        validationFunction: (_) => null,
-        isEnabled: false,
+        validationFunction: (v) {
+          if (v == null || v.isEmpty) return 'ادخل سعر الكورس';
+          if (double.tryParse(v) == null) return 'ادخل رقم صحيح';
+          return null;
+        },
+        isEnabled: true,
       ),
     ],
   );
@@ -544,7 +553,7 @@ class _CoursesManagerState extends State<CoursesManager> {
                       v!.isEmpty ? 'أضف نقطة صالحة' : null,
                 ),
               ),
-              if (_learningPoints.length > 1)
+              if (isEditing && _learningPoints.length > 1)
                 IconButton(
                   onPressed: () => _removeLearningPoint(e.key),
                   icon: const Icon(
@@ -557,14 +566,15 @@ class _CoursesManagerState extends State<CoursesManager> {
           ),
         ),
       ),
-      Align(
-        alignment: Alignment.centerRight,
-        child: _hoverButton(
-          'أضف نقطة',
-          FontAwesomeIcons.plus,
-          _addLearningPoint,
+      if (isEditing)
+        Align(
+          alignment: Alignment.centerRight,
+          child: _hoverButton(
+            'أضف نقطة',
+            FontAwesomeIcons.plus,
+            _addLearningPoint,
+          ),
         ),
-      ),
     ],
   );
 
@@ -588,6 +598,8 @@ class _CoursesManagerState extends State<CoursesManager> {
             ],
           ),
           child: ExpansionTile(
+            shape: const Border(),
+            collapsedShape: const Border(),
             iconColor: AppColors.skyBlue,
             collapsedIconColor: AppColors.skyBlue,
             title: Row(
@@ -655,10 +667,11 @@ class _CoursesManagerState extends State<CoursesManager> {
           ),
         );
       }),
-      Align(
-        alignment: Alignment.centerRight,
-        child: _hoverButton('أضف درس', FontAwesomeIcons.plus, _addLesson),
-      ),
+      if (isEditing)
+        Align(
+          alignment: Alignment.centerRight,
+          child: _hoverButton('أضف درس', FontAwesomeIcons.plus, _addLesson),
+        ),
     ],
   );
 

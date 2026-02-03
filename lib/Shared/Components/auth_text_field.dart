@@ -15,6 +15,7 @@ class AuthTextField extends StatefulWidget {
   final Color? fillColor;
   final TextStyle? hintStyle;
   final bool? isEnabled;
+  final Function(String)? onFieldSubmitted;
 
   const AuthTextField({
     super.key,
@@ -30,6 +31,7 @@ class AuthTextField extends StatefulWidget {
     this.fillColor,
     this.hintStyle,
     this.isEnabled = true,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -61,6 +63,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             enabled: widget.isEnabled,
             controller: widget.controller,
             validator: widget.validationFunction,
+            onFieldSubmitted: widget.onFieldSubmitted,
             autovalidateMode: AutovalidateMode.onUserInteraction,
             autocorrect: true,
             autofocus: widget.autofocus,
