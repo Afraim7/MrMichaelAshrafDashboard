@@ -160,7 +160,7 @@ class _CoursesCenterState extends State<CoursesCenter> {
                                 numberOfLessons: course.lessons.length,
                                 grade: course.grade.label,
                                 studentsCount: course.enrollmentCount,
-                                price: course.price!,
+                                price: course.priceForOnline,
                                 onTap: () {
                                   DashboardHelper.showCoursesManager(
                                     context: context,

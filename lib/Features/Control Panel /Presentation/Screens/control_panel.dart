@@ -257,7 +257,7 @@ class _ControlPanelState extends State<ControlPanel> {
                             grade: course.grade.label,
                             studentsCount: course.enrollmentCount,
                             imageUrl: course.background!,
-                            price: course.price!,
+                            price: course.priceForOnline,
                             onTap: () {
                               DashboardHelper.showCoursesManager(
                                 context: context,

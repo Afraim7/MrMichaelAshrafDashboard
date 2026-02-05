@@ -15,6 +15,7 @@ import 'package:mrmichaelashrafdashboard/Shared/Components/app_sub_button.dart';
 import 'package:mrmichaelashrafdashboard/Shared/Components/app_dialog.dart';
 import 'package:mrmichaelashrafdashboard/Shared/Components/auth_text_field.dart';
 import 'package:mrmichaelashrafdashboard/Shared/Components/picker_field.dart';
+import 'package:mrmichaelashrafdashboard/Shared/Components/date_picker_field.dart';
 import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
 import 'package:mrmichaelashrafdashboard/Features/Courses/Data/Models/course.dart';
 import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/lesson.dart';
@@ -42,7 +43,10 @@ class CoursesManager extends StatefulWidget {
 class _CoursesManagerState extends State<CoursesManager> {
   late TextEditingController titleController;
   late TextEditingController descriptionController;
-  late TextEditingController priceController;
+  late TextEditingController priceOnlineController;
+  late TextEditingController priceCenterController;
+  late TextEditingController discountController;
+  DateTime? discountDate;
   bool isEditing = false;
   bool _hasUnsavedChanges = false;
   String? selectedGrade;
@@ -58,10 +62,15 @@ class _CoursesManagerState extends State<CoursesManager> {
     try {
       titleController = TextEditingController();
       descriptionController = TextEditingController();
-      priceController = TextEditingController(text: '0');
+      priceOnlineController = TextEditingController(text: '0');
+      priceCenterController = TextEditingController(text: '0');
+      discountController = TextEditingController(text: '0');
+
       titleController.addListener(_onFieldChanged);
       descriptionController.addListener(_onFieldChanged);
-      priceController.addListener(_onFieldChanged);
+      priceOnlineController.addListener(_onFieldChanged);
+      priceCenterController.addListener(_onFieldChanged);
+      discountController.addListener(_onFieldChanged);
 
       if (widget.existingCourse != null) {
         isEditing = false; // Start in view mode for existing courses
@@ -88,7 +97,12 @@ class _CoursesManagerState extends State<CoursesManager> {
       final c = widget.existingCourse!;
       titleController.text = c.title;
       descriptionController.text = c.description;
-      priceController.text = c.price.toString();
+      priceOnlineController.text = c.priceForOnline.toString();
+      priceCenterController.text = c.priceForCenter.toString();
+      discountController.text = c.discount.toString();
+      if (c.discountDueDate > 0) {
+        discountDate = DateTime.fromMillisecondsSinceEpoch(c.discountDueDate);
+      }
       selectedGrade = c.grade.label;
       selectedSubject = c.subject.label;
       selectedTeacher = c.teacher;
@@ -156,12 +170,19 @@ class _CoursesManagerState extends State<CoursesManager> {
       }
     }
 
-    double price = 0;
+    double priceOnline = 0;
+    double priceCenter = 0;
+    double discount = 0;
+
     try {
-      price = double.parse(priceController.text.trim());
-    } catch (e) {
-      price = 0;
-    }
+      priceOnline = double.parse(priceOnlineController.text.trim());
+    } catch (_) {}
+    try {
+      priceCenter = double.parse(priceCenterController.text.trim());
+    } catch (_) {}
+    try {
+      discount = double.parse(discountController.text.trim());
+    } catch (_) {}
 
     // Convert selected grade label to Grade enum
     Grade selectedGradeEnum = Grade.allGrades;
@@ -201,7 +222,10 @@ class _CoursesManagerState extends State<CoursesManager> {
       teacher: selectedTeacher ?? '',
       grade: selectedGradeEnum,
       subject: selectedSubjectEnum,
-      price: price,
+      priceForOnline: priceOnline,
+      priceForCenter: priceCenter,
+      discount: discount,
+      discountDueDate: discountDate?.millisecondsSinceEpoch ?? 0,
       content: _learningPoints
           .map((c) => c.text.trim())
           .where((t) => t.isNotEmpty)
@@ -217,7 +241,7 @@ class _CoursesManagerState extends State<CoursesManager> {
                   ? null
                   : l['video']!.text.trim(),
               pdfURL: l['pdf']!.text.trim().isEmpty
-                  ? AppAssets.pdfs.lessonPlaceholder
+                  ? null
                   : l['pdf']!.text.trim(),
             ),
           )
@@ -229,7 +253,9 @@ class _CoursesManagerState extends State<CoursesManager> {
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
-    priceController.dispose();
+    priceOnlineController.dispose();
+    priceCenterController.dispose();
+    discountController.dispose();
     for (var l in lessons) {
       l['title']?.dispose();
       l['video']?.dispose();
@@ -282,7 +308,7 @@ class _CoursesManagerState extends State<CoursesManager> {
             state is AdminPublishingCourse ||
             state is AdminSavingCourseUpdates ||
             state is AdminDeletingCourse;
-        final shouldDisable = widget.existingCourse != null && !isEditing;
+
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 100),
@@ -295,21 +321,21 @@ class _CoursesManagerState extends State<CoursesManager> {
                 _buildHeaderSection(isLoading),
                 const SizedBox(height: 16),
                 AbsorbPointer(
-                  absorbing: isLoading || shouldDisable,
+                  absorbing: isLoading,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _sectionTitle('معلومات الكورس'),
                       _buildCourseInfo(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
                       _sectionTitle('هنتعلم اي في الكورس'),
                       _buildLearningPointsSection(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
                       _sectionTitle('الدروس'),
                       _buildLessonsSection(),
-                      const SizedBox(height: 30),
-                      _buildFooterSection(isLoading),
+                      const SizedBox(height: 50),
+                      if (isEditing) _buildFooterSection(isLoading),
                     ],
                   ),
                 ),
@@ -472,6 +498,7 @@ class _CoursesManagerState extends State<CoursesManager> {
         hint: 'مثلاً: مقدمة في الجغرافيا',
         controller: titleController,
         keyboardType: TextInputType.text,
+        isEnabled: isEditing,
         validationFunction: AppValidator.validateCourseTitle,
       ),
       const SizedBox(height: 8),
@@ -481,57 +508,129 @@ class _CoursesManagerState extends State<CoursesManager> {
         controller: descriptionController,
         maxLines: 3,
         keyboardType: TextInputType.text,
+        isEnabled: isEditing,
         validationFunction: AppValidator.validateCourseDescription,
       ),
       const SizedBox(height: 8),
       Text('المدرس', style: _labelStyle()),
-      PickerField(
-        hint: 'اختر المدرس',
-        pickerList: Teacher.values.map((t) => t.label).toList(),
-        currentValue: selectedTeacher,
-        onChanged: (v) {
-          if (v != null) {
-            setState(() => selectedTeacher = v);
-          }
-        },
+      AbsorbPointer(
+        absorbing: !isEditing,
+        child: PickerField(
+          hint: 'اختر المدرس',
+          pickerList: Teacher.values.map((t) => t.label).toList(),
+          currentValue: selectedTeacher,
+          onChanged: (v) {
+            if (v != null) {
+              setState(() => selectedTeacher = v);
+            }
+          },
+        ),
       ),
       const SizedBox(height: 8),
       Text('المادة', style: _labelStyle()),
-      PickerField(
-        hint: 'اختر المادة',
-        pickerList: Subject.values.map((s) => s.label).toList(),
-        currentValue: selectedSubject,
-        onChanged: (v) {
-          if (v != null) {
-            setState(() => selectedSubject = v);
-          }
-        },
+      AbsorbPointer(
+        absorbing: !isEditing,
+        child: PickerField(
+          hint: 'اختر المادة',
+          pickerList: Subject.values.map((s) => s.label).toList(),
+          currentValue: selectedSubject,
+          onChanged: (v) {
+            if (v != null) {
+              setState(() => selectedSubject = v);
+            }
+          },
+        ),
       ),
       const SizedBox(height: 8),
       Text('الصف الدراسي', style: _labelStyle()),
-      PickerField(
-        hint: 'أختر الصف الدراسي',
-        pickerList: Grade.values.map((g) => g.label).toList(),
-        currentValue: selectedGrade,
-        onChanged: (v) {
-          if (v != null) {
-            setState(() => selectedGrade = v);
-          }
-        },
+      AbsorbPointer(
+        absorbing: !isEditing,
+        child: PickerField(
+          hint: 'أختر الصف الدراسي',
+          pickerList: Grade.values.map((g) => g.label).toList(),
+          currentValue: selectedGrade,
+          onChanged: (v) {
+            if (v != null) {
+              setState(() => selectedGrade = v);
+            }
+          },
+        ),
       ),
       const SizedBox(height: 8),
-      Text('السعر \$', style: _labelStyle()),
+      Text('سعر الكورس لطلاب الاونلاين \$', style: _labelStyle()),
       AuthTextField(
         hint: '0 \$',
         keyboardType: TextInputType.number,
-        controller: priceController,
+        controller: priceOnlineController,
         validationFunction: (v) {
           if (v == null || v.isEmpty) return 'ادخل سعر الكورس';
           if (double.tryParse(v) == null) return 'ادخل رقم صحيح';
           return null;
         },
-        isEnabled: true,
+        isEnabled: isEditing,
       ),
+      const SizedBox(height: 8),
+      Text('سعر الكورس لطلاب السنتر \$', style: _labelStyle()),
+      AuthTextField(
+        hint: '0 \$',
+        keyboardType: TextInputType.number,
+        controller: priceCenterController,
+        validationFunction: (v) {
+          if (v == null || v.isEmpty) return 'ادخل سعر الكورس';
+          if (double.tryParse(v) == null) return 'ادخل رقم صحيح';
+          return null;
+        },
+        isEnabled: isEditing,
+      ),
+      const SizedBox(height: 8),
+      Text('الخصم %', style: _labelStyle()),
+      AuthTextField(
+        hint: '0 %',
+        keyboardType: TextInputType.number,
+        controller: discountController,
+        validationFunction: (v) {
+          if (v != null && v.isNotEmpty) {
+            final val = double.tryParse(v);
+            if (val == null) return 'ادخل رقم صحيح';
+            if (val < 0 || val > 100) return 'يجب أن يكون بين 0 و 100';
+          }
+          return null;
+        },
+        isEnabled: isEditing,
+      ),
+      const SizedBox(height: 8),
+      Text('تاريخ انتهاء الخصم', style: _labelStyle()),
+      AbsorbPointer(
+        absorbing: !isEditing,
+        child: DatePickerField(
+          selectedDate: discountDate,
+          onDateChanged: (date) {
+            setState(() {
+              discountDate = date;
+              _hasUnsavedChanges = true;
+            });
+          },
+          hint: 'اختر تاريخ انتهاء الخصم',
+          icon: Icons.calendar_today,
+          firstDate: DateTime.now(),
+        ),
+      ),
+      if (discountDate != null && isEditing)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: () {
+              setState(() {
+                discountDate = null;
+                _hasUnsavedChanges = true;
+              });
+            },
+            child: Text(
+              'إلغاء التاريخ',
+              style: TextStyle(color: AppColors.posterRed),
+            ),
+          ),
+        ),
     ],
   );
 
@@ -549,6 +648,7 @@ class _CoursesManagerState extends State<CoursesManager> {
                   controller: e.value,
                   maxLines: 1,
                   keyboardType: TextInputType.text,
+                  isEnabled: isEditing,
                   validationFunction: (v) =>
                       v!.isEmpty ? 'أضف نقطة صالحة' : null,
                 ),
@@ -629,13 +729,17 @@ class _CoursesManagerState extends State<CoursesManager> {
                       controller: lesson['title']!,
                       validationFunction: AppValidator.validateLessonTitle,
                       keyboardType: TextInputType.text,
+                      isEnabled: isEditing,
                     ),
                     AuthTextField(
-                      hint: 'رابط الفيديو',
+                      hint: 'رابط الفيديو (اختياري)',
                       controller: lesson['video']!,
-                      validationFunction: (v) =>
-                          AppValidator.validateUrl(v, 'رابط الفيديو'),
+                      validationFunction: (v) {
+                        if (v == null || v.trim().isEmpty) return null;
+                        return AppValidator.validateUrl(v, 'رابط الفيديو');
+                      },
                       keyboardType: TextInputType.text,
+                      isEnabled: isEditing,
                     ),
                     AuthTextField(
                       hint: 'رابط PDF (اختياري)',
@@ -648,18 +752,20 @@ class _CoursesManagerState extends State<CoursesManager> {
                         return AppValidator.validatePdfUrl(v);
                       },
                       keyboardType: TextInputType.text,
+                      isEnabled: isEditing,
                     ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        icon: const Icon(
-                          FontAwesomeIcons.trashCan,
-                          color: AppColors.posterRed,
-                          size: 16,
+                    if (isEditing)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          icon: const Icon(
+                            FontAwesomeIcons.trashCan,
+                            color: AppColors.posterRed,
+                            size: 16,
+                          ),
+                          onPressed: () => _removeLesson(index),
                         ),
-                        onPressed: () => _removeLesson(index),
                       ),
-                    ),
                   ],
                 ),
               ),
