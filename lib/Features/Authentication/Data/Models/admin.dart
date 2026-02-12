@@ -1,5 +1,5 @@
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/gender.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/gender.dart';
 
 class Admin {
   final String adminID;

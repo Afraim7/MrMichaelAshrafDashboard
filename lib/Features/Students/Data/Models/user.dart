@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/gender.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/government.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/stage.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/study_type.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/gender.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/government.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/stage.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/study_type.dart';
 
 class AppUser {
   // will be set from firebase auth

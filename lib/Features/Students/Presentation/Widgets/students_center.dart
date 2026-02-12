@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_strings.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/admin_functions_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Students/Presentation/Widgets/admin_studen_card.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/dashboard_screen_header.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/grading_filters.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_default_screen.dart';
-import 'package:mrmichaelashrafdashboard/Features/Students/Data/Models/user.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/features/students/logic/admin_students_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/students/logic/admin_students_state.dart';
+import 'package:mrmichaelashrafdashboard/features/students/presentation/widgets/admin_studen_card.dart';
+import 'package:mrmichaelashrafdashboard/features/students/presentation/widgets/students_analytics_section.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/dashboard_screen_header.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/grading_filters.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_default_screen.dart';
+import 'package:mrmichaelashrafdashboard/features/students/data/models/user.dart';
 
 class StudentsCenter extends StatefulWidget {
   const StudentsCenter({super.key});
@@ -29,25 +31,25 @@ class _StudentsCenterState extends State<StudentsCenter> {
   @override
   void initState() {
     super.initState();
-    context.read<AdminFunctionsCubit>().fetchAllStudents();
+    context.read<AdminStudentsCubit>().fetchAllStudents();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.appBlack,
-      body: BlocConsumer<AdminFunctionsCubit, AdminFunctionsState>(
+      body: BlocConsumer<AdminStudentsCubit, AdminStudentsState>(
         listener: (context, state) {
-          if (state is AdminStudentsLoaded) {
+          if (state is StudentsLoaded) {
             setState(() => allStudents = state.students);
-          } else if (state is AdminFunctionsError) {
-            DashboardHelper.showErrorBar(context, error: state.error);
+          } else if (state is StudentsError) {
+            DashboardHelper.showErrorBar(context, error: state.message);
           }
         },
         builder: (context, state) {
           final students = allStudents;
           final isEmpty = students.isEmpty;
-          final isLoading = state is AdminLoadingStudents;
+          final isLoading = state is StudentsLoading;
 
           return RefreshIndicator(
             // Card-dark background keeps the refresh sheet cohesive.
@@ -83,17 +85,24 @@ class _StudentsCenterState extends State<StudentsCenter> {
                     ),
                   ),
 
+                  // ANALYTICS -----------------------------------------------------
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 30, left: 20),
+                    child: StudentsAnalyticsSection(students: students),
+                  ),
+
                   // FILTERS -------------------------------------------------------
                   GradingFilters(
+                    selectedGrade: _selectedGrade,
                     onChanged: (selectedValue) {
                       setState(() => _selectedGrade = selectedValue);
 
-                      if (_selectedGrade == Grade.allGrades) {
-                        context.read<AdminFunctionsCubit>().fetchAllStudents();
+                      if (selectedValue == Grade.allGrades) {
+                        context.read<AdminStudentsCubit>().fetchAllStudents();
                       } else {
-                        context
-                            .read<AdminFunctionsCubit>()
-                            .fetchStudentsByGrade(_selectedGrade.name);
+                        context.read<AdminStudentsCubit>().fetchStudentsByGrade(
+                          selectedValue.name,
+                        );
                       }
                     },
                   ),
@@ -157,7 +166,7 @@ class _StudentsCenterState extends State<StudentsCenter> {
 
   // Selects the right cubit call according to the currently selected grade.
   Future<void> _refreshStudents() {
-    final cubit = context.read<AdminFunctionsCubit>();
+    final cubit = context.read<AdminStudentsCubit>();
     if (_selectedGrade == Grade.allGrades) {
       return cubit.fetchAllStudents();
     }

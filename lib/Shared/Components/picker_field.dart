@@ -1,7 +1,7 @@
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 
 class PickerField extends StatelessWidget {
   final List<String> pickerList;

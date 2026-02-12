@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/gender.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/government.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/stage.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/study_type.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/meta_row_badge.dart';
-import 'package:mrmichaelashrafdashboard/Features/Students/Data/Models/user.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/gender.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/government.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/stage.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/study_type.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/meta_row_badge.dart';
+import 'package:mrmichaelashrafdashboard/features/students/data/models/user.dart';
 
 class AdminStudentCard extends StatefulWidget {
   final AppUser student;

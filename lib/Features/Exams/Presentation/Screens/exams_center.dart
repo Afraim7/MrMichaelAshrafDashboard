@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_strings.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/admin_functions_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Presentation/Widgets/admin_exam_card.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/dashboard_screen_header.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/exam.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/grading_filters.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_default_screen.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_sub_button.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/sub_button_state.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/logic/admin_exams_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/logic/admin_exams_state.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/presentation/widgets/admin_exam_card.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/presentation/widgets/exams_analytics_section.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/dashboard_screen_header.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/data/models/exam.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/grading_filters.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_default_screen.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_sub_button.dart';
 
 class ExamsCenter extends StatefulWidget {
   const ExamsCenter({super.key});
@@ -31,27 +33,27 @@ class _ExamsCenterState extends State<ExamsCenter> {
   @override
   void initState() {
     super.initState();
-    context.read<AdminFunctionsCubit>().fetchAllExams();
+    context.read<AdminExamsCubit>().fetchAllExams();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.appBlack,
-      body: BlocConsumer<AdminFunctionsCubit, AdminFunctionsState>(
+      body: BlocConsumer<AdminExamsCubit, AdminExamsState>(
         listener: (context, state) {
-          if (state is AdminExamsLoaded) {
+          if (state is ExamsLoaded) {
             setState(() {
               allExams = state.exams;
             });
-          } else if (state is AdminFunctionsError) {
-            DashboardHelper.showErrorBar(context, error: state.error);
+          } else if (state is ExamsError) {
+            DashboardHelper.showErrorBar(context, error: state.message);
           }
         },
         builder: (context, state) {
           final List<Exam> displayedExams = allExams;
           bool emptyExamList = displayedExams.isEmpty;
-          bool isLoading = state is AdminLoadingExams;
+          bool isLoading = state is ExamsLoading;
 
           return RefreshIndicator(
             // Use dark card tone so the refresh HUD blends with the design.
@@ -86,6 +88,12 @@ class _ExamsCenterState extends State<ExamsCenter> {
                     ),
                   ),
 
+                  // ANALYTICS
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: ExamsAnalyticsSection(exams: displayedExams),
+                  ),
+
                   // ADD NEW EXAM BUTTON
                   Align(
                     alignment: AlignmentGeometry.center,
@@ -109,15 +117,16 @@ class _ExamsCenterState extends State<ExamsCenter> {
                   ),
 
                   GradingFilters(
+                    selectedGrade: _selectedGrade,
                     onChanged: (selectedValue) {
                       setState(() {
                         _selectedGrade = selectedValue;
                       });
 
                       if (selectedValue == Grade.allGrades) {
-                        context.read<AdminFunctionsCubit>().fetchAllExams();
+                        context.read<AdminExamsCubit>().fetchAllExams();
                       } else {
-                        context.read<AdminFunctionsCubit>().fetchExamsByGrade(
+                        context.read<AdminExamsCubit>().fetchExamsByGrade(
                           selectedValue.label,
                         );
                       }
@@ -205,7 +214,7 @@ class _ExamsCenterState extends State<ExamsCenter> {
 
   // Calls the appropriate cubit fetch method based on the selected grade.
   Future<void> _refreshExams() {
-    final cubit = context.read<AdminFunctionsCubit>();
+    final cubit = context.read<AdminExamsCubit>();
     if (_selectedGrade == Grade.allGrades) {
       return cubit.fetchAllExams();
     }

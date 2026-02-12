@@ -7,21 +7,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/admin_functions_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Courses/Presentation/Widgets/courses_manager.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Presentation/Widgets/exam_results_sheet.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Presentation/Widgets/exams_manager.dart';
-import 'package:mrmichaelashrafdashboard/Features/Highlights/Presentation/Widgets/highlights_manager.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_bottom_sheet.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_dialog.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_snack_bar.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/loading_dialog.dart';
-import 'package:mrmichaelashrafdashboard/Features/Courses/Data/Models/course.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/exam.dart';
-import 'package:mrmichaelashrafdashboard/Features/Highlights/Data/Models/highlight.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/sub_button_state.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/logic/admin_exams_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/presentation/widgets/courses_manager.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/presentation/widgets/exam_results_sheet.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/presentation/widgets/exams_manager.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/presentation/widgets/highlights_manager.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_bottom_sheet.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_dialog.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_snack_bar.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/loading_dialog.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/data/models/course.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/data/models/exam.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/data/models/highlight.dart';
 
 class DashboardHelper {
   DashboardHelper._();
@@ -209,7 +209,7 @@ class DashboardHelper {
   }) async {
     showLoadingDialog(context);
     try {
-      final cubit = context.read<AdminFunctionsCubit>();
+      final cubit = context.read<AdminExamsCubit>();
       final results = await cubit.fetchExamResults(exam.id);
       final studentIds = results.map((r) => r.studentId).toSet().toList();
       final studentNamesMap = await cubit.fetchStudentNames(studentIds);

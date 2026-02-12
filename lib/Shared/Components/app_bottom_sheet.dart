@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_radii.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_radii.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
 
 class AppBottomSheet {
   final Widget child;
@@ -20,7 +20,7 @@ class AppBottomSheet {
       builder: (context) {
         return Container(
           width: DashboardHelper.screenWidth,
-          padding: EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
+          padding: EdgeInsets.only(top: 50, bottom: 0, left: 20, right: 20),
           constraints: BoxConstraints(
             minHeight: DashboardHelper.screenHeight * 0.4,
             maxHeight: DashboardHelper.screenHeight * 0.85,

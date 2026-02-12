@@ -2,7 +2,7 @@ import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 
 class AppSnackBar {
   final String message;
@@ -16,12 +16,13 @@ class AppSnackBar {
     this.icon,
     required this.backgroundColor,
     this.duration = const Duration(seconds: 3),
-    this.maxWidth = 500,
+    this.maxWidth = 600,
   });
 
   void showSnackBar(BuildContext context) => Flushbar(
+    maxWidth: maxWidth,
     messageText: Align(
-      alignment: AlignmentGeometry.topCenter,
+      alignment: Alignment.center,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Directionality(

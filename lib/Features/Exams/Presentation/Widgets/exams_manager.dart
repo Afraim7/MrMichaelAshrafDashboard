@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_strings.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/exam_status.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/app_validator.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/admin_functions_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_sub_button.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_dialog.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/auth_text_field.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/picker_field.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/date_picker_field.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/exam.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/question.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/exam_status.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/app_validator.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/logic/admin_exams_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/logic/admin_exams_state.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/admin_hover_button.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/auth_text_field.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/manager_layout.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/picker_field.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/date_picker_field.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/data/models/exam.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/data/models/question.dart';
 
 class ExamsManager extends StatefulWidget {
   final Exam? existingExam;
@@ -267,9 +267,9 @@ class _ExamsManagerState extends State<ExamsManager> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AdminFunctionsCubit, AdminFunctionsState>(
+    return BlocConsumer<AdminExamsCubit, AdminExamsState>(
       listener: (context, state) {
-        if (state is AdminExamPublished || state is AdminExamUpdatesSaved) {
+        if (state is ExamPublished || state is ExamUpdatesSaved) {
           if (context.mounted && Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
@@ -279,7 +279,7 @@ class _ExamsManagerState extends State<ExamsManager> {
                 ? AppStrings.success.updatesSaved
                 : AppStrings.success.examPublished,
           );
-        } else if (state is AdminExamDeleted) {
+        } else if (state is ExamDeleted) {
           if (context.mounted && Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
@@ -290,43 +290,82 @@ class _ExamsManagerState extends State<ExamsManager> {
             context,
             message: AppStrings.success.examDeleted,
           );
-        } else if (state is AdminFunctionsError) {
-          DashboardHelper.showErrorBar(context, error: state.error);
+        } else if (state is ExamsError) {
+          DashboardHelper.showErrorBar(context, error: state.message);
         }
       },
       builder: (context, state) {
         final isLoading =
-            state is AdminPublishingExam ||
-            state is AdminSavingExamUpdates ||
-            state is AdminDeletingExam;
-        final shouldDisable = widget.existingExam != null && !isEditing;
-        return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 100),
+            state is PublishingExam ||
+            state is SavingExamUpdates ||
+            state is DeletingExam;
+
+        return ManagerLayout(
+          title: widget.existingExam != null
+              ? 'تعديل الامتحان'
+              : 'إضافة امتحان جديد',
+          isEditing: isEditing,
+          isLoading: isLoading,
+          isExistingItem: widget.existingExam != null,
+          onEditToggle: () => setState(() => isEditing = !isEditing),
+          onDelete: () {
+            context.read<AdminExamsCubit>().deleteExam(
+              examId: widget.existingExam!.id,
+            );
+            if (widget.onDelete != null) {
+              widget.onDelete!();
+            }
+          },
+          onSave: () {
+            if (!_formKey.currentState!.validate()) return;
+
+            // Validate that all questions have a correct answer selected
+            for (int i = 0; i < questions.length; i++) {
+              final q = questions[i];
+              final correctAnswerIndex = q['correctAnswerIndex'] as int?;
+              if (correctAnswerIndex == null) {
+                DashboardHelper.showErrorBar(
+                  context,
+                  error: 'يرجى تحديد الإجابة الصحيحة للسؤال ${i + 1}',
+                );
+                return;
+              }
+            }
+
+            final exam = _buildExamModel();
+
+            if (widget.existingExam != null) {
+              context.read<AdminExamsCubit>().saveExamUpdates(exam: exam);
+            } else {
+              context.read<AdminExamsCubit>().publishExam(exam: exam);
+            }
+
+            // Call callbacks if provided
+            if (widget.onSaveUpdates != null && widget.existingExam != null) {
+              widget.onSaveUpdates!(exam);
+            } else if (widget.onPublish != null &&
+                widget.existingExam == null) {
+              widget.onPublish!();
+            }
+          },
+          onCancel: () => Navigator.of(context).pop(),
+          saveButtonTitle: widget.existingExam != null
+              ? 'حفظ التغييرات'
+              : 'نشر الامتحان',
+          deleteDescription:
+              'هل أنت متأكد من حذف هذا الامتحان؟ سيتم حذف جميع بياناته نهائياً.',
+          deleteLottiePath: AppAssets.animations.emptyExamsList,
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildHeaderSection(isLoading),
+                _sectionTitle('معلومات الامتحان'),
+                _buildExamInfo(),
                 const SizedBox(height: 20),
-                AbsorbPointer(
-                  absorbing: isLoading || shouldDisable,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _sectionTitle('معلومات الامتحان'),
-                      _buildExamInfo(),
-                      const SizedBox(height: 20),
-                      _sectionTitle('الأسئلة'),
-                      _buildQuestionsSection(),
-                      const SizedBox(height: 30),
-                      _buildFooterSection(isLoading),
-                    ],
-                  ),
-                ),
+                _sectionTitle('الأسئلة'),
+                _buildQuestionsSection(),
               ],
             ),
           ),
@@ -357,110 +396,6 @@ class _ExamsManagerState extends State<ExamsManager> {
     fontWeight: FontWeight.w300,
     color: AppColors.appWhite,
     height: 1.5,
-  );
-
-  Widget _hoverButton(String title, IconData icon, VoidCallback onTap) =>
-      MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: AppColors.surfaceDark.withAlpha(204),
-              border: Border.all(color: AppColors.appNavy, width: 1.2),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 14, color: AppColors.skyBlue),
-                const SizedBox(width: 10),
-                Text(
-                  title,
-                  style: GoogleFonts.scheherazadeNew(
-                    fontSize: 16,
-                    color: AppColors.skyBlue,
-                    fontWeight: FontWeight.w500,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-  // ─────────────────────────── Sections ───────────────────────────
-  Widget _buildHeaderSection(bool isLoading) => Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      IconButton(
-        onPressed: widget.existingExam != null
-            ? () => setState(() => isEditing = !isEditing)
-            : null,
-        icon: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          transitionBuilder: (child, animation) {
-            return ScaleTransition(scale: animation, child: child);
-          },
-          child: Icon(
-            isEditing ? FontAwesomeIcons.check : FontAwesomeIcons.penToSquare,
-            key: ValueKey(isEditing),
-            color: AppColors.skyBlue.withAlpha(
-              widget.existingExam != null ? 255 : 57,
-            ),
-          ),
-        ),
-      ),
-      Flexible(
-        child: Text(
-          widget.existingExam != null ? 'تعديل الامتحان' : 'إضافة امتحان جديد',
-          style: GoogleFonts.scheherazadeNew(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.appWhite,
-          ),
-        ),
-      ),
-      IconButton(
-        icon: Icon(
-          FontAwesomeIcons.trashCan,
-          color: AppColors.posterRed.withAlpha(
-            (widget.existingExam != null && isEditing) ? 255 : 57,
-          ),
-        ),
-        onPressed: (widget.existingExam != null && isEditing)
-            ? () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (dialogContext) => AppDialog(
-                    header: 'حذف الامتحان',
-                    description:
-                        'هل أنت متأكد من حذف هذا الامتحان؟ سيتم حذف جميع بياناته نهائياً.',
-                    // Use the exams-specific Lottie asset instead of the courses one.
-                    lottiePath: AppAssets.animations.emptyExamsList,
-                    onConfirmState: isLoading
-                        ? SubButtonState.loading
-                        : SubButtonState.idle,
-                    onConfirm: () {
-                      context.read<AdminFunctionsCubit>().deleteExam(
-                        examId: widget.existingExam!.id,
-                      );
-                      if (widget.onDelete != null) {
-                        widget.onDelete!();
-                      }
-                    },
-                    confirmTitle: 'حذف',
-                    cancelTitle: 'إلغاء',
-                  ),
-                );
-              }
-            : null,
-      ),
-    ],
   );
 
   Widget _buildExamInfo() => Column(
@@ -648,10 +583,10 @@ class _ExamsManagerState extends State<ExamsManager> {
                         }),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: _hoverButton(
-                        'أضف خيار',
-                        FontAwesomeIcons.plus,
-                        () => _addOption(index),
+                      child: AdminHoverButton(
+                        title: 'أضف خيار',
+                        icon: FontAwesomeIcons.plus,
+                        onTap: () => _addOption(index),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -683,57 +618,12 @@ class _ExamsManagerState extends State<ExamsManager> {
       }),
       Align(
         alignment: Alignment.centerRight,
-        child: _hoverButton('أضف سؤال', FontAwesomeIcons.plus, _addQuestion),
-      ),
-    ],
-  );
-
-  Widget _buildFooterSection(bool isLoading) => Row(
-    mainAxisAlignment: MainAxisAlignment.end,
-    children: [
-      Expanded(
-        child: AppSubButton(
-          title: widget.existingExam != null ? 'حفظ التغييرات' : 'نشر الامتحان',
-          backgroundColor: AppColors.royalBlue,
-          state: isLoading ? SubButtonState.loading : SubButtonState.idle,
-          onTap: () {
-            if (!_formKey.currentState!.validate()) return;
-
-            // Validate that all questions have a correct answer selected
-            for (int i = 0; i < questions.length; i++) {
-              final q = questions[i];
-              final correctAnswerIndex = q['correctAnswerIndex'] as int?;
-              if (correctAnswerIndex == null) {
-                DashboardHelper.showErrorBar(
-                  context,
-                  error: 'يرجى تحديد الإجابة الصحيحة للسؤال ${i + 1}',
-                );
-                return;
-              }
-            }
-
-            final exam = _buildExamModel();
-
-            if (widget.existingExam != null) {
-              context.read<AdminFunctionsCubit>().saveExamUpdates(exam: exam);
-            } else {
-              context.read<AdminFunctionsCubit>().publishExam(exam: exam);
-            }
-
-            // Call callbacks if provided
-            if (widget.onSaveUpdates != null && widget.existingExam != null) {
-              widget.onSaveUpdates!(exam);
-            } else if (widget.onPublish != null &&
-                widget.existingExam == null) {
-              widget.onPublish!();
-            }
-          },
+        child: AdminHoverButton(
+          title: 'أضف سؤال',
+          icon: FontAwesomeIcons.plus,
+          onTap: _addQuestion,
         ),
       ),
-      const SizedBox(width: 6),
-      _hoverButton('إلغاء', FontAwesomeIcons.xmark, () {
-        Navigator.of(context).pop();
-      }),
     ],
   );
 }

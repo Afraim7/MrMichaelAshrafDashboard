@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/exam_status.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_badge.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_sub_button.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/meta_row_badge.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/exam_status.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/sub_button_state.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_badge.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_sub_button.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/meta_row_badge.dart';
 
 class AdminExamCard extends StatefulWidget {
   final String examTitle;

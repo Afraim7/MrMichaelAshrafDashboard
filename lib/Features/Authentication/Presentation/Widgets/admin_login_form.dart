@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/app_validator.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/auth_text_field.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_sub_button.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/app_validator.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/auth_text_field.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_sub_button.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/sub_button_state.dart';
 
 class AdminLoginForm extends StatefulWidget {
   final TextEditingController emailController;

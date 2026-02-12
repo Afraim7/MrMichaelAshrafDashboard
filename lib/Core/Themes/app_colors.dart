@@ -35,6 +35,8 @@ class AppColors {
   static const Color tomatoRed = Color(0xFFEF4444);
   static const Color pastelGreen = Color.fromARGB(255, 4, 169, 62);
   static const Color lightGreen = Color.fromARGB(255, 70, 201, 113);
+  static const Color emeraldGreen = Color(0xFF10B981);
+  static const Color energyOrange = Color(0xFFF97316);
 
   // Light Backgrounds / Surfaces
   static const Color sand50 = Color(0xFFF4EDDB);

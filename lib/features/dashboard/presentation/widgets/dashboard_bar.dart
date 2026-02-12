@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Authentication/Logic/admin_auth_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin%20Dashboard/Logic/dashboard_center_cubit.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/features/dashboard/logic/dashboard_center_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/authentication/logic/admin_auth_cubit.dart';
 
 class DashboardBar extends StatelessWidget {
   const DashboardBar({super.key});

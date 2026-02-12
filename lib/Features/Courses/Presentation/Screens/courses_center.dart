@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_strings.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/admin_functions_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Courses/Presentation/Widgets/admin_course_card.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/dashboard_screen_header.dart';
-import 'package:mrmichaelashrafdashboard/Features/Courses/Data/Models/course.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/grading_filters.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_default_screen.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_sub_button.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/sub_button_state.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/logic/admin_courses_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/logic/admin_courses_state.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/presentation/widgets/admin_course_card.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/presentation/widgets/courses_analytics_section.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/dashboard_screen_header.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/data/models/course.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/grading_filters.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_default_screen.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_sub_button.dart';
 
 class CoursesCenter extends StatefulWidget {
   const CoursesCenter({super.key});
@@ -31,27 +33,27 @@ class _CoursesCenterState extends State<CoursesCenter> {
   @override
   void initState() {
     super.initState();
-    context.read<AdminFunctionsCubit>().fetchAllCourses();
+    context.read<AdminCoursesCubit>().fetchAllCourses();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.appBlack,
-      body: BlocConsumer<AdminFunctionsCubit, AdminFunctionsState>(
+      body: BlocConsumer<AdminCoursesCubit, AdminCoursesState>(
         listener: (context, state) {
-          if (state is AdminCoursesLoaded) {
+          if (state is CoursesLoaded) {
             setState(() {
               allCourses = state.courses;
             });
-          } else if (state is AdminFunctionsError) {
-            DashboardHelper.showErrorBar(context, error: state.error);
+          } else if (state is CoursesError) {
+            DashboardHelper.showErrorBar(context, error: state.message);
           }
         },
         builder: (context, state) {
           final List<Course> displayedCourses = allCourses;
           final bool emptyCourseList = displayedCourses.isEmpty;
-          final bool isLoading = state is AdminLoadingCourses;
+          final bool isLoading = state is CoursesLoading;
 
           return RefreshIndicator(
             // Dark card background keeps pull-down ink consistent with UI.
@@ -88,6 +90,13 @@ class _CoursesCenterState extends State<CoursesCenter> {
                     ),
                   ),
 
+                  // ANALYTICS
+                  if (!isLoading)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: CoursesAnalyticsSection(courses: displayedCourses),
+                    ),
+
                   // ADD NEW COURSE BUTTON
                   Align(
                     alignment: AlignmentGeometry.center,
@@ -112,14 +121,15 @@ class _CoursesCenterState extends State<CoursesCenter> {
 
                   // FILTERS
                   GradingFilters(
+                    selectedGrade: _selectedGrade,
                     onChanged: (selectedValue) {
                       setState(() => _selectedGrade = selectedValue);
 
-                      if (_selectedGrade == Grade.allGrades) {
-                        context.read<AdminFunctionsCubit>().fetchAllCourses();
+                      if (selectedValue == Grade.allGrades) {
+                        context.read<AdminCoursesCubit>().fetchAllCourses();
                       } else {
-                        context.read<AdminFunctionsCubit>().fetchCoursesByGrade(
-                          _selectedGrade.name,
+                        context.read<AdminCoursesCubit>().fetchCoursesByGrade(
+                          selectedValue.name,
                         );
                       }
                     },
@@ -160,7 +170,8 @@ class _CoursesCenterState extends State<CoursesCenter> {
                                 numberOfLessons: course.lessons.length,
                                 grade: course.grade.label,
                                 studentsCount: course.enrollmentCount,
-                                price: course.priceForOnline,
+                                price: course.price,
+                                imageUrl: course.background,
                                 onTap: () {
                                   DashboardHelper.showCoursesManager(
                                     context: context,
@@ -197,7 +208,7 @@ class _CoursesCenterState extends State<CoursesCenter> {
 
   // Decides which fetch action should run for the currently selected grade.
   Future<void> _refreshCourses() {
-    final cubit = context.read<AdminFunctionsCubit>();
+    final cubit = context.read<AdminCoursesCubit>();
     if (_selectedGrade == Grade.allGrades) {
       return cubit.fetchAllCourses();
     }

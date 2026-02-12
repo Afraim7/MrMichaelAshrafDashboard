@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mrmichaelashrafdashboard/Features/Students/Data/Models/user.dart';
-import 'package:mrmichaelashrafdashboard/Features/Students/Presentation/Widgets/admin_studen_card.dart';
+import 'package:mrmichaelashrafdashboard/features/students/data/models/user.dart';
+import 'package:mrmichaelashrafdashboard/features/students/presentation/widgets/admin_studen_card.dart';
 
 class StudentsSection extends StatelessWidget {
   final List<AppUser> students;

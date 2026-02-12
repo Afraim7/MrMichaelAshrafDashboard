@@ -19,8 +19,7 @@ class _Animations {
   final String emptyExamsList = 'assets/animations/empty exams list.json';
   final String emptyHighlightList =
       'assets/animations/Empty Highlight List.json';
-  final String emptyStudentsList =
-      'assets/animations/Empty Students List.json';
+  final String emptyStudentsList = 'assets/animations/Empty Students List.json';
   final String noConnection = 'assets/animations/No Internet Connection.json';
   final String noEnrolledCourses = 'assets/animations/No Enrolled Courses.json';
   final String notificationTap = 'assets/animations/Notification Tap.json';
@@ -42,6 +41,8 @@ class _Animations {
 class _Images {
   const _Images();
   final String courseDefault = 'assets/images/course_placeholder.jpeg';
+  final String coursePlaceholder12 = 'assets/images/course_placeholder12.jpeg';
+  final String coursePlaceholder3 = 'assets/images/course_placeholder3.jpeg';
   final String maleStudent = 'assets/images/malestudent.png';
   final String femaleStudent = 'assets/images/femalestudent.png';
   final String adminMale = 'assets/images/teacher_admin.png';

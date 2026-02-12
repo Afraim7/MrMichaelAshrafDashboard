@@ -1,5 +1,5 @@
 import 'package:bloc/bloc.dart';
-import 'package:mrmichaelashrafdashboard/Features/Splash/Logic/dashboard_flow_state.dart';
+import 'package:mrmichaelashrafdashboard/features/splash/logic/dashboard_flow_state.dart';
 
 class DashboardFlowCubit extends Cubit<DashboardFlowState> {
   DashboardFlowCubit() : super(DashboardFlowChecking());

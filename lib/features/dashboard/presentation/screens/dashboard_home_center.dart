@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin%20Dashboard/Logic/dashboard_center_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Control%20Panel%20/Presentation/Screens/control_panel.dart';
-import 'package:mrmichaelashrafdashboard/Features/Courses/Presentation/Screens/courses_center.dart';
-import 'package:mrmichaelashrafdashboard/Features/Highlights/Presentation/Screens/highlights_center.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Presentation/Screens/exams_center.dart';
-import 'package:mrmichaelashrafdashboard/Features/Students/Presentation/Widgets/students_center.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin%20Dashboard/Presentation/Widgets/dashboard_bar.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/features/dashboard/logic/dashboard_center_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/dashboard/presentation/widgets/dashboard_bar.dart';
+import 'package:mrmichaelashrafdashboard/features/control_panel/presentation/screens/control_panel.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/presentation/screens/courses_center.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/presentation/screens/highlights_center.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/presentation/screens/exams_center.dart';
+import 'package:mrmichaelashrafdashboard/features/students/presentation/widgets/students_center.dart';
 
 class DashboardHomeCenter extends StatelessWidget {
   const DashboardHomeCenter({super.key});

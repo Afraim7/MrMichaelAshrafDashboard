@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_strings.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/highlights_types.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_badge.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/meta_row_badge.dart';
-import 'package:mrmichaelashrafdashboard/Features/Highlights/Data/Models/highlight.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/highlights_types.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/app_badge.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/meta_row_badge.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/data/models/highlight.dart';
 
 class AdminHighlightCard extends StatefulWidget {
   final Highlight highlight;

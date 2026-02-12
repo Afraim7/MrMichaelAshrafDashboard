@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/subject.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/study_type.dart';
-import '../../../Exams/Data/Models/lesson.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/subject.dart';
+
+import '../../../exams/data/models/lesson.dart';
 
 class Course {
   final String courseID;
@@ -16,8 +16,7 @@ class Course {
   final int durationDays;
   final double discount;
   final int discountDueDate;
-  final double priceForOnline;
-  final double priceForCenter;
+  final double price;
   final int enrollmentCount;
   final Grade grade;
   final Subject subject;
@@ -39,8 +38,7 @@ class Course {
     required this.durationDays,
     required this.discount,
     required this.discountDueDate,
-    required this.priceForOnline,
-    required this.priceForCenter,
+    required this.price,
     this.enrollmentCount = 0,
     this.grade = Grade.allGrades,
     required this.subject,
@@ -48,19 +46,13 @@ class Course {
     this.comments = const [],
   });
 
-  // bool get isFree => (price ?? 0) == 0; // Deprecated: Need to know user type
   // Price Calculation Logic
-  double getOriginalPrice(StudyType userType) {
-    switch (userType) {
-      case StudyType.onlineStudent:
-        return priceForOnline;
-      case StudyType.centerStudent:
-        return priceForCenter;
-    }
+  double getOriginalPrice() {
+    return price;
   }
 
-  double getFinalPrice(StudyType userType) {
-    double basePrice = getOriginalPrice(userType);
+  double getFinalPrice() {
+    double basePrice = getOriginalPrice();
 
     // Check if discount is active based on date (assuming discountDueDate is Timestamp milliseconds)
     bool isDiscountActive = false;
@@ -73,7 +65,6 @@ class Course {
     } else {
       // If no date set but discount > 0, maybe it's always active?
       // Or assume 0 means no due date limit?
-      // User didn't specify. Assuming if due date is 0 it's always active if discount > 0
       if (discount > 0) isDiscountActive = true;
     }
 
@@ -92,8 +83,8 @@ class Course {
     return basePrice;
   }
 
-  bool hasDiscount(StudyType userType) {
-    return getFinalPrice(userType) < getOriginalPrice(userType);
+  bool hasDiscount() {
+    return getFinalPrice() < getOriginalPrice();
   }
 
   bool get isEverGreen => endDate == null;
@@ -117,8 +108,7 @@ class Course {
       'durationDays': durationDays,
       'discount': discount,
       'discountDueDate': discountDueDate,
-      'priceForOnline': priceForOnline,
-      'priceForCenter': priceForCenter,
+      'price': price,
       'enrollmentCount': enrollmentCount,
       'grade': grade.name,
       'subject': subject.name,
@@ -146,8 +136,7 @@ class Course {
       durationDays: map['durationDays'] ?? 0,
       discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
       discountDueDate: map['discountDueDate'] ?? 0,
-      priceForOnline: (map['priceForOnline'] as num?)?.toDouble() ?? 0.0,
-      priceForCenter: (map['priceForCenter'] as num?)?.toDouble() ?? 0.0,
+      price: (map['price'] as num?)?.toDouble() ?? 0.0,
       enrollmentCount: map['enrollmentCount'] ?? 0,
       grade: Grade.values.firstWhere(
         (g) => g.name == map['grade'],

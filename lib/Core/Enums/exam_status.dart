@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 
 enum ExamStatus { active, upcoming, completed, missed, done }
 

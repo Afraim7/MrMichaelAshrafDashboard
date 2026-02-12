@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_radii.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/meta_row_badge.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_radii.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/meta_row_badge.dart';
 
 class AdminCourseCard extends StatefulWidget {
   final String title;
@@ -71,12 +71,29 @@ class _AdminCourseCardState extends State<AdminCourseCard> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(35)),
-                  child: Image.asset(
-                    AppAssets.images.courseDefault,
-                    fit: BoxFit.cover,
-                    height: 200,
-                    width: double.infinity,
-                  ),
+                  child:
+                      widget.imageUrl != null &&
+                          widget.imageUrl!.startsWith('http')
+                      ? Image.network(
+                          widget.imageUrl!,
+                          fit: BoxFit.cover,
+                          height: 250,
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              AppAssets.images.courseDefault,
+                              fit: BoxFit.cover,
+                              height: 250,
+                              width: double.infinity,
+                            );
+                          },
+                        )
+                      : Image.asset(
+                          widget.imageUrl ?? AppAssets.images.courseDefault,
+                          fit: BoxFit.cover,
+                          height: 250,
+                          width: double.infinity,
+                        ),
                 ),
 
                 Padding(

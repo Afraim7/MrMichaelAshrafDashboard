@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Authentication/Logic/admin_auth_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Splash/Logic/dashboard_flow_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Splash/Logic/dashboard_flow_state.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/features/authentication/logic/admin_auth_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/splash/logic/dashboard_flow_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/splash/logic/dashboard_flow_state.dart';
 
 class Splash extends StatefulWidget {
   const Splash({super.key});
@@ -42,9 +42,9 @@ class _SplashState extends State<Splash> {
     final isVerified = isLoggedIn ? authState.admin.emailVerified : false;
 
     context.read<DashboardFlowCubit>().checkDashboardFlow(
-          isLoggedIn: isLoggedIn,
-          isEmailVerified: isVerified,
-        );
+      isLoggedIn: isLoggedIn,
+      isEmailVerified: isVerified,
+    );
   }
 
   @override

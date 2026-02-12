@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 
 class GradingFilters extends StatefulWidget {
-  const GradingFilters({super.key, this.onChanged});
+  const GradingFilters({super.key, this.onChanged, this.selectedGrade});
   final ValueChanged<Grade>? onChanged;
+  final Grade? selectedGrade;
 
   @override
   State<GradingFilters> createState() => _GrdadingFiltersState();
@@ -14,6 +15,28 @@ class GradingFilters extends StatefulWidget {
 
 class _GrdadingFiltersState extends State<GradingFilters> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateSelectedIndex();
+  }
+
+  @override
+  void didUpdateWidget(GradingFilters oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedGrade != widget.selectedGrade) {
+      _updateSelectedIndex();
+    }
+  }
+
+  void _updateSelectedIndex() {
+    if (widget.selectedGrade != null) {
+      setState(() {
+        _selectedIndex = Grade.values.indexOf(widget.selectedGrade!);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

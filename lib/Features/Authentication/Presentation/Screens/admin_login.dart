@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_radii.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_strings.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Authentication/Logic/admin_auth_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Features/Authentication/Presentation/Widgets/admin_login_form.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_radii.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/features/authentication/logic/admin_auth_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/authentication/presentation/widgets/admin_login_form.dart';
 
 class AdminLogin extends StatefulWidget {
   const AdminLogin({super.key});

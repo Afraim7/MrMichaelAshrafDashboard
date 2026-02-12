@@ -1,5 +1,5 @@
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/highlights_types.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/highlights_types.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Highlight {

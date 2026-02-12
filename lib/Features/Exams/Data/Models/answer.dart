@@ -1,4 +1,4 @@
-import 'package:mrmichaelashrafdashboard/Core/Enums/answer_status.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/answer_status.dart';
 
 class Answer {
   final String questionId;

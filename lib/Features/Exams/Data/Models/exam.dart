@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_strings.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/exam_status.dart';
-import 'package:mrmichaelashrafdashboard/Features/Exams/Data/Models/question.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/exam_status.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/data/models/question.dart';
 
 class Exam {
   final String id;

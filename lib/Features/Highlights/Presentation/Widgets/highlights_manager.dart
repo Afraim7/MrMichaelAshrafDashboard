@@ -3,20 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_strings.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/highlights_types.dart';
-import 'package:mrmichaelashrafdashboard/Core/Themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/Core/Enums/sub_button_state.dart';
-import 'package:mrmichaelashrafdashboard/Core/Utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/Features/Admin/Logic/admin_functions_cubit.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/auth_text_field.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_sub_button.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/picker_field.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/date_picker_field.dart';
-import 'package:mrmichaelashrafdashboard/Shared/Components/app_dialog.dart';
-import 'package:mrmichaelashrafdashboard/Core/Config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/Features/Highlights/Data/Models/highlight.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/highlights_types.dart';
+import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/logic/admin_highlights_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/logic/admin_highlights_state.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/auth_text_field.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/manager_layout.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/picker_field.dart';
+import 'package:mrmichaelashrafdashboard/shared/components/date_picker_field.dart';
+import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/data/models/highlight.dart';
 
 class HighlightsManager extends StatefulWidget {
   final Highlight? existingHighlight;
@@ -55,45 +54,11 @@ class _HighlightsManagerState extends State<HighlightsManager> {
     _endDate = highlight.endTime;
   }
 
-  Widget _hoverButton(String title, IconData icon, VoidCallback onTap) =>
-      MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: AppColors.surfaceDark.withAlpha(204),
-              border: Border.all(color: AppColors.appNavy, width: 1.2),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 14, color: AppColors.skyBlue),
-                const SizedBox(width: 10),
-                Text(
-                  title,
-                  style: GoogleFonts.scheherazadeNew(
-                    fontSize: 16,
-                    color: AppColors.skyBlue,
-                    fontWeight: FontWeight.w500,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AdminFunctionsCubit, AdminFunctionsState>(
+    return BlocConsumer<AdminHighlightsCubit, AdminHighlightsState>(
       listener: (context, state) {
-        if (state is AdminHighlightPublished ||
-            state is AdminHighlightUpdatesSaved) {
+        if (state is HighlightPublished || state is HighlightUpdatesSaved) {
           if (context.mounted && Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
@@ -101,15 +66,11 @@ class _HighlightsManagerState extends State<HighlightsManager> {
             context,
             message: AppStrings.success.highlightPublished,
           );
-        } else if (state is AdminHighlightUpdatesSaved) {
-          DashboardHelper.showSuccessBar(
-            context,
-            message: AppStrings.success.highlightPublished,
-          );
-          if (mounted) {
-            Navigator.pop(context);
-          }
-        } else if (state is AdminHighlightDeleted) {
+        } else if (state is HighlightUpdatesSaved) {
+          // This block seems unreachable/redundant as HighlightUpdatesSaved is caught above,
+          // but preserving logic just in case (though previous logic had duplicate checks).
+          // Simplified to match intent.
+        } else if (state is HighlightDeleted) {
           if (context.mounted && Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
@@ -120,205 +81,137 @@ class _HighlightsManagerState extends State<HighlightsManager> {
             context,
             message: AppStrings.success.highlightDeleted,
           );
-        } else if (state is AdminFunctionsError) {
-          DashboardHelper.showErrorBar(context, error: state.error);
+        } else if (state is HighlightsError) {
+          DashboardHelper.showErrorBar(context, error: state.message);
         }
       },
       builder: (context, state) {
         final isLoading =
-            state is AdminPublishingHighlight ||
-            state is AdminSavingHighlightUpdates ||
-            state is AdminDeletingHighlight;
-        final shouldDisable = widget.existingHighlight != null && !isEditing;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 🔔 Title
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  onPressed: widget.existingHighlight != null
-                      ? () => setState(() => isEditing = !isEditing)
-                      : null,
-                  icon: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    transitionBuilder: (child, animation) {
-                      return ScaleTransition(scale: animation, child: child);
-                    },
-                    child: Icon(
-                      isEditing
-                          ? FontAwesomeIcons.check
-                          : FontAwesomeIcons.penToSquare,
-                      key: ValueKey(isEditing),
-                      color: AppColors.skyBlue.withAlpha(
-                        widget.existingHighlight != null ? 255 : 57,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        widget.existingHighlight != null
-                            ? 'تعديل الملاحظة'
-                            : 'الملاحظات',
-                        style: GoogleFonts.scheherazadeNew(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.appWhite,
-                          height: 1.7,
-                        ),
-                      ),
-                      Text(
-                        widget.existingHighlight != null
-                            ? 'تعديل ملاحظة موجودة'
-                            : 'إرسال ملاحظات واخبار للمستخدمين',
-                        style: GoogleFonts.scheherazadeNew(
-                          fontSize: 14,
-                          color: AppColors.textSecondaryDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Delete button - only shown when editing existing highlight
-                IconButton(
-                  icon: Icon(
-                    FontAwesomeIcons.trashCan,
-                    color: AppColors.posterRed.withAlpha(
-                      (widget.existingHighlight != null && isEditing)
-                          ? 255
-                          : 57,
-                    ),
-                  ),
-                  onPressed: (widget.existingHighlight != null && isEditing)
-                      ? () {
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (dialogContext) => AppDialog(
-                              header: 'حذف الملاحظة',
-                              description:
-                                  'هل أنت متأكد من حذف هذه الملاحظة؟\n\n'
-                                  '${widget.existingHighlight!.message.length > 50 ? widget.existingHighlight!.message.substring(0, 50) : widget.existingHighlight!.message}...',
-                              lottiePath:
-                                  AppAssets.animations.emptyHighlightList,
-                              onConfirm: () {
-                                context
-                                    .read<AdminFunctionsCubit>()
-                                    .deleteHighlight(
-                                      widget.existingHighlight!.id,
-                                    );
-                              },
-                              onConfirmState: isLoading
-                                  ? SubButtonState.loading
-                                  : SubButtonState.idle,
-                              confirmTitle: 'حذف',
-                              cancelTitle: 'إلغاء',
-                            ),
-                          );
-                        }
-                      : null,
-                ),
-              ],
-            ),
+            state is PublishingHighlight ||
+            state is SavingHighlightUpdates ||
+            state is DeletingHighlight;
 
-            const SizedBox(height: 20),
+        return ManagerLayout(
+          title: widget.existingHighlight != null
+              ? 'تعديل الملاحظة'
+              : 'الملاحظات',
+          subtitle: widget.existingHighlight != null
+              ? 'تعديل ملاحظة موجودة'
+              : 'إرسال ملاحظات واخبار للمستخدمين',
+          isEditing: isEditing,
+          isLoading: isLoading,
+          isExistingItem: widget.existingHighlight != null,
+          onEditToggle: () => setState(() => isEditing = !isEditing),
+          onDelete: () {
+            context.read<AdminHighlightsCubit>().deleteHighlight(
+              widget.existingHighlight!.id,
+            );
+          },
+          onSave: () {
+            if (_selectedGrade == null ||
+                _selectedHighlightType == null ||
+                _startDate == null ||
+                _endDate == null ||
+                _messageController.text.trim().isEmpty) {
+              DashboardHelper.showErrorBar(
+                context,
+                error: AppStrings.errors.requiredFieldsNotFilled,
+              );
+              return;
+            }
 
-            // 📩 Form
-            AbsorbPointer(
-              absorbing: isLoading || shouldDisable,
-              child: Column(
+            if (widget.existingHighlight != null) {
+              context.read<AdminHighlightsCubit>().saveHighlightUpdates(
+                highlightId: widget.existingHighlight!.id,
+                highlightText: _messageController.text.trim(),
+                grade: _selectedGrade!.name,
+                type: _selectedHighlightType!.name,
+                startDate: Timestamp.fromDate(_startDate!),
+                endDate: Timestamp.fromDate(_endDate!),
+              );
+            } else {
+              context.read<AdminHighlightsCubit>().publishHighlight(
+                highlightText: _messageController.text.trim(),
+                grade: _selectedGrade!.name,
+                type: _selectedHighlightType!.name,
+                startDate: Timestamp.fromDate(_startDate!),
+                endDate: Timestamp.fromDate(_endDate!),
+              );
+            }
+          },
+          onCancel: () {
+            if (Navigator.canPop(context)) {
+              Navigator.of(context).pop();
+            }
+          },
+          saveButtonTitle: widget.existingHighlight != null
+              ? 'حفظ التغييرات'
+              : 'إرسال',
+          deleteDescription: widget.existingHighlight != null
+              ? 'هل أنت متأكد من حذف هذه الملاحظة؟\n\n'
+                    '${widget.existingHighlight!.message.length > 50 ? widget.existingHighlight!.message.substring(0, 50) : widget.existingHighlight!.message}...'
+              : '',
+          deleteLottiePath: AppAssets.animations.emptyHighlightList,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'الصف الدراسي',
+                style: GoogleFonts.scheherazadeNew(
+                  fontSize: 16,
+                  color: AppColors.appWhite,
+                ),
+              ),
+              const SizedBox(height: 6),
+              PickerField(
+                key: ValueKey('grade_${_selectedGrade?.label ?? 'null'}'),
+                pickerList: Grade.values.map((g) => g.label).toList(),
+                currentValue: _selectedGrade?.label,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedGrade = Grade.values.firstWhere(
+                        (g) => g.label == value,
+                        orElse: () => Grade.allGrades,
+                      );
+                    });
+                  }
+                },
+                hint: 'أختر الصف الدراسي',
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'النوع',
+                style: GoogleFonts.scheherazadeNew(
+                  fontSize: 16,
+                  color: AppColors.appWhite,
+                ),
+              ),
+              const SizedBox(height: 8),
+              PickerField(
+                key: ValueKey(
+                  'type_${_selectedHighlightType?.label ?? 'null'}',
+                ),
+                pickerList: HighlightType.values.map((h) => h.label).toList(),
+                currentValue: _selectedHighlightType?.label,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedHighlightType = HighlightType.values.firstWhere(
+                        (h) => h.label == value,
+                        orElse: () => HighlightType.note,
+                      );
+                    });
+                  }
+                },
+                hint: 'أختر نوع الملاحظة',
+              ),
+              const SizedBox(height: 20),
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'الصف الدراسي',
-                    style: GoogleFonts.scheherazadeNew(
-                      fontSize: 16,
-                      color: AppColors.appWhite,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  PickerField(
-                    key: ValueKey('grade_${_selectedGrade?.label ?? 'null'}'),
-                    pickerList: Grade.values.map((g) => g.label).toList(),
-                    currentValue: _selectedGrade?.label,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _selectedGrade = Grade.values.firstWhere(
-                            (g) => g.label == value,
-                            orElse: () => Grade.allGrades,
-                          );
-                        });
-                      }
-                    },
-                    hint: 'أختر الصف الدراسي',
-                  ),
-                  const SizedBox(height: 20),
-
-                  Text(
-                    'النوع',
-                    style: GoogleFonts.scheherazadeNew(
-                      fontSize: 16,
-                      color: AppColors.appWhite,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  PickerField(
-                    key: ValueKey(
-                      'type_${_selectedHighlightType?.label ?? 'null'}',
-                    ),
-                    pickerList: HighlightType.values
-                        .map((h) => h.label)
-                        .toList(),
-                    currentValue: _selectedHighlightType?.label,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _selectedHighlightType = HighlightType.values
-                              .firstWhere(
-                                (h) => h.label == value,
-                                orElse: () => HighlightType.note,
-                              );
-                        });
-                      }
-                    },
-                    hint: 'أختر نوع الملاحظة',
-                  ),
-                  const SizedBox(height: 20),
-
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'تاريخ البداية',
-                        style: GoogleFonts.scheherazadeNew(
-                          fontSize: 16,
-                          color: AppColors.appWhite,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      DatePickerField(
-                        key: ValueKey(
-                          'startDate_${_startDate?.toString() ?? 'null'}',
-                        ),
-                        selectedDate: _startDate,
-                        onDateChanged: (date) =>
-                            setState(() => _startDate = date),
-                        hint: 'اختر تاريخ البداية',
-                        icon: FontAwesomeIcons.calendar,
-                        firstDate: DateTime.now(),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-                  Text(
-                    'تاريخ النهاية',
+                    'تاريخ البداية',
                     style: GoogleFonts.scheherazadeNew(
                       fontSize: 16,
                       color: AppColors.appWhite,
@@ -326,101 +219,52 @@ class _HighlightsManagerState extends State<HighlightsManager> {
                   ),
                   const SizedBox(height: 8),
                   DatePickerField(
-                    key: ValueKey('endDate_${_endDate?.toString() ?? 'null'}'),
-                    selectedDate: _endDate,
-                    onDateChanged: (date) => setState(() => _endDate = date),
-                    hint: 'اختر تاريخ النهاية',
-                    icon: FontAwesomeIcons.calendar,
-                    firstDate: _startDate ?? DateTime.now(),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Text(
-                    'نص الملاحظة',
-                    style: GoogleFonts.scheherazadeNew(
-                      fontSize: 16,
-                      color: AppColors.appWhite,
+                    key: ValueKey(
+                      'startDate_${_startDate?.toString() ?? 'null'}',
                     ),
+                    selectedDate: _startDate,
+                    onDateChanged: (date) => setState(() => _startDate = date),
+                    hint: 'اختر تاريخ البداية',
+                    icon: FontAwesomeIcons.calendar,
+                    firstDate: DateTime.now(),
                   ),
-                  const SizedBox(height: 8),
-                  AuthTextField(
-                    hint: 'اكتب نص الملاحظة هنا...',
-                    keyboardType: TextInputType.multiline,
-                    controller: _messageController,
-                    validationFunction: (v) => null,
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: AppSubButton(
-                          title: widget.existingHighlight != null
-                              ? 'حفظ التغييرات'
-                              : 'إرسال',
-                          backgroundColor: AppColors.royalBlue,
-                          state:
-                              (state is AdminPublishingHighlight ||
-                                  state is AdminSavingHighlightUpdates)
-                              ? SubButtonState.loading
-                              : SubButtonState.idle,
-                          onTap: () {
-                            if (_selectedGrade == null ||
-                                _selectedHighlightType == null ||
-                                _startDate == null ||
-                                _endDate == null ||
-                                _messageController.text.trim().isEmpty) {
-                              DashboardHelper.showErrorBar(
-                                context,
-                                error:
-                                    AppStrings.errors.requiredFieldsNotFilled,
-                              );
-                              return;
-                            }
-
-                            if (widget.existingHighlight != null) {
-                              context
-                                  .read<AdminFunctionsCubit>()
-                                  .saveHighlightUpdates(
-                                    highlightId: widget.existingHighlight!.id,
-                                    highlightText: _messageController.text
-                                        .trim(),
-                                    grade: _selectedGrade!.name,
-                                    type: _selectedHighlightType!.name,
-                                    startDate: Timestamp.fromDate(_startDate!),
-                                    endDate: Timestamp.fromDate(_endDate!),
-                                  );
-                            } else {
-                              context
-                                  .read<AdminFunctionsCubit>()
-                                  .publishHighlight(
-                                    highlightText: _messageController.text
-                                        .trim(),
-                                    grade: _selectedGrade!.name,
-                                    type: _selectedHighlightType!.name,
-                                    startDate: Timestamp.fromDate(_startDate!),
-                                    endDate: Timestamp.fromDate(_endDate!),
-                                  );
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      _hoverButton('إلغاء', FontAwesomeIcons.xmark, () {
-                        if (Navigator.canPop(context)) {
-                          Navigator.of(context).pop();
-                        }
-                      }),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              Text(
+                'تاريخ النهاية',
+                style: GoogleFonts.scheherazadeNew(
+                  fontSize: 16,
+                  color: AppColors.appWhite,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DatePickerField(
+                key: ValueKey('endDate_${_endDate?.toString() ?? 'null'}'),
+                selectedDate: _endDate,
+                onDateChanged: (date) => setState(() => _endDate = date),
+                hint: 'اختر تاريخ النهاية',
+                icon: FontAwesomeIcons.calendar,
+                firstDate: _startDate ?? DateTime.now(),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'نص الملاحظة',
+                style: GoogleFonts.scheherazadeNew(
+                  fontSize: 16,
+                  color: AppColors.appWhite,
+                ),
+              ),
+              const SizedBox(height: 8),
+              AuthTextField(
+                hint: 'اكتب نص الملاحظة هنا...',
+                keyboardType: TextInputType.multiline,
+                controller: _messageController,
+                validationFunction: (v) => null,
+                maxLines: 3,
+              ),
+            ],
+          ),
         );
       },
     );
