@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/constants/app_assets.dart';
@@ -31,6 +32,7 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
   bool _isEnrollFormOpen = false;
   bool _isEnrolling = false;
   final _enrollController = TextEditingController();
+  final _amountController = TextEditingController();
   final _enrollFormKey = GlobalKey<FormState>();
   List<CourseEnrollment> _enrollments = const [];
   Map<String, String> _namesMap = const {};
@@ -45,6 +47,7 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
   @override
   void dispose() {
     _enrollController.dispose();
+    _amountController.dispose();
     super.dispose();
   }
 
@@ -106,9 +109,22 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
     if (_isEnrolling) return;
     setState(() {
       _isEnrollFormOpen = !_isEnrollFormOpen;
-      if (!_isEnrollFormOpen) _enrollController.clear();
+      if (_isEnrollFormOpen) {
+        // Pre-fill with the live price: the discounted amount while the offer
+        // is still active, the full price once it has expired. The admin can
+        // override it before enrolling.
+        _amountController.text = _formatAmount(widget.course.getFinalPrice());
+      } else {
+        _enrollController.clear();
+        _amountController.clear();
+      }
     });
   }
+
+  /// Trims a trailing `.0` so a whole-number price shows as "25" not "25.0",
+  /// while keeping any genuine fractional part (e.g. "25.5").
+  String _formatAmount(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
   Future<void> _submitEnrollForm() async {
     if (_isEnrolling) return;
@@ -120,6 +136,7 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
       await cubit.enrollingAStudent(
         courseId: widget.course.courseID,
         email: _enrollController.text.trim(),
+        amountPaid: double.tryParse(_amountController.text.trim()) ?? 0,
       );
       if (!mounted) return;
       DashboardHelper.showSuccessBar(
@@ -129,6 +146,7 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
       setState(() {
         _isEnrollFormOpen = false;
         _enrollController.clear();
+        _amountController.clear();
       });
       await _loadEnrollments();
     } catch (e) {
@@ -222,6 +240,7 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
                 isEnrollFormOpen: _isEnrollFormOpen,
                 isEnrolling: _isEnrolling,
                 enrollController: _enrollController,
+                amountController: _amountController,
                 enrollFormKey: _enrollFormKey,
               ),
           ],
@@ -421,6 +440,7 @@ class _LoadedContent extends StatelessWidget {
   final bool isEnrollFormOpen;
   final bool isEnrolling;
   final TextEditingController enrollController;
+  final TextEditingController amountController;
   final GlobalKey<FormState> enrollFormKey;
 
   const _LoadedContent({
@@ -435,6 +455,7 @@ class _LoadedContent extends StatelessWidget {
     required this.isEnrollFormOpen,
     required this.isEnrolling,
     required this.enrollController,
+    required this.amountController,
     required this.enrollFormKey,
   });
 
@@ -542,6 +563,7 @@ class _LoadedContent extends StatelessWidget {
           child: isEnrollFormOpen
               ? _EnrollInlineForm(
                   controller: enrollController,
+                  amountController: amountController,
                   formKey: enrollFormKey,
                   isSubmitting: isEnrolling,
                   onAdd: onSubmitEnrollForm,
@@ -556,6 +578,7 @@ class _LoadedContent extends StatelessWidget {
 
 class _EnrollInlineForm extends StatelessWidget {
   final TextEditingController controller;
+  final TextEditingController amountController;
   final GlobalKey<FormState> formKey;
   final bool isSubmitting;
   final VoidCallback onAdd;
@@ -563,6 +586,7 @@ class _EnrollInlineForm extends StatelessWidget {
 
   const _EnrollInlineForm({
     required this.controller,
+    required this.amountController,
     required this.formKey,
     required this.isSubmitting,
     required this.onAdd,
@@ -596,7 +620,7 @@ class _EnrollInlineForm extends StatelessWidget {
                 autofocus: true,
                 enabled: !isSubmitting,
                 keyboardType: TextInputType.emailAddress,
-                onFieldSubmitted: (_) => isSubmitting ? null : onAdd(),
+                textInputAction: TextInputAction.next,
                 style: shahr.copyWith(
                   fontSize: 16,
                   color: AppColors.textPrimaryDark,
@@ -619,6 +643,65 @@ class _EnrollInlineForm extends StatelessWidget {
                     Icons.alternate_email_rounded,
                     color: AppColors.neutral500,
                     size: 20,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.surfaceDark,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppColors.pastelGreen,
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Amount paid — pre-filled with the live (discounted/full) price
+              // by the parent; the admin can edit or zero it out before saving.
+              TextFormField(
+                controller: amountController,
+                enabled: !isSubmitting,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
+                onFieldSubmitted: (_) => isSubmitting ? null : onAdd(),
+                style: shahr.copyWith(
+                  fontSize: 16,
+                  color: AppColors.textPrimaryDark,
+                ),
+                validator: (v) {
+                  final t = v?.trim() ?? '';
+                  if (t.isEmpty) return 'أدخل المبلغ المدفوع';
+                  final n = double.tryParse(t);
+                  if (n == null || n < 0) return 'مبلغ غير صحيح';
+                  return null;
+                },
+                decoration: InputDecoration(
+                  hintText: '0',
+                  hintStyle: shahr.copyWith(
+                    fontSize: 14,
+                    color: AppColors.neutral600,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.payments_outlined,
+                    color: AppColors.neutral500,
+                    size: 20,
+                  ),
+                  suffixText: 'ج.م',
+                  suffixStyle: GoogleFonts.amiri(
+                    fontSize: 13,
+                    color: AppColors.neutral500,
                   ),
                   filled: true,
                   fillColor: AppColors.surfaceDark,
