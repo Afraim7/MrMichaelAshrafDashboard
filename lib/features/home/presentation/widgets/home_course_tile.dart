@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
@@ -48,7 +47,7 @@ class HomeCourseTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    FontAwesomeIcons.bookOpen,
+                    Icons.menu_book_rounded,
                     color: AppColors.midBlue,
                     size: 18,
                   ),

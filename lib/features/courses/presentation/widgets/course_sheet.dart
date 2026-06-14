@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/constants/app_strings.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
@@ -742,7 +741,7 @@ class _CoursesManagerState extends State<CourseSheet> {
                 IconButton(
                   onPressed: () => _removeLearningPoint(e.key),
                   icon: const Icon(
-                    FontAwesomeIcons.trashCan,
+                    Icons.delete,
                     size: 16,
                     color: AppColors.posterRed,
                   ),
@@ -756,7 +755,7 @@ class _CoursesManagerState extends State<CourseSheet> {
           alignment: Alignment.centerRight,
           child: AdminHoverButton(
             title: 'أضف نقطة',
-            icon: FontAwesomeIcons.plus,
+            icon: Icons.add,
             onTap: _addLearningPoint,
           ),
         ),
@@ -844,7 +843,7 @@ class _CoursesManagerState extends State<CourseSheet> {
                         alignment: Alignment.centerLeft,
                         child: IconButton(
                           icon: const Icon(
-                            FontAwesomeIcons.trashCan,
+                            Icons.delete,
                             color: AppColors.posterRed,
                             size: 16,
                           ),
@@ -863,7 +862,7 @@ class _CoursesManagerState extends State<CourseSheet> {
           alignment: Alignment.centerRight,
           child: AdminHoverButton(
             title: 'أضف درس',
-            icon: FontAwesomeIcons.plus,
+            icon: Icons.add,
             onTap: _addLesson,
           ),
         ),

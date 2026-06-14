@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/button_state.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_typography.dart';
@@ -107,7 +106,7 @@ class _BodyState extends State<_Body> {
                             ),
                             const SizedBox(height: 20),
                             AuthTextField(
-                              icon: FontAwesomeIcons.envelope,
+                              icon: Icons.email,
                               label: 'البريد الإلكتروني',
                               hint: 'أدخل بريدك الإلكتروني',
                               keyboardType: TextInputType.emailAddress,
@@ -115,7 +114,7 @@ class _BodyState extends State<_Body> {
                               validationFunction: AppValidator.validateEmail,
                             ),
                             AuthTextField(
-                              icon: FontAwesomeIcons.lock,
+                              icon: Icons.lock,
                               label: 'كلمة السر',
                               hint: 'أدخل كلمة السر',
                               keyboardType: TextInputType.visiblePassword,

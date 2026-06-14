@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/constants/app_strings.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
@@ -490,7 +489,7 @@ class _ExamsManagerState extends State<ExamSheet> {
             selectedDate: startTime,
             onDateChanged: (date) => setState(() => startTime = date),
             hint: 'اختر تاريخ ووقت البداية',
-            icon: FontAwesomeIcons.calendar,
+            icon: Icons.calendar_month,
             firstDate: DateTime.now(),
             withTime: true,
           ),
@@ -506,7 +505,7 @@ class _ExamsManagerState extends State<ExamSheet> {
             selectedDate: endTime,
             onDateChanged: (date) => setState(() => endTime = date),
             hint: 'اختر تاريخ ووقت النهاية',
-            icon: FontAwesomeIcons.calendar,
+            icon: Icons.calendar_month,
             firstDate: startTime ?? DateTime.now(),
             withTime: true,
           ),
@@ -652,7 +651,7 @@ class _ExamsManagerState extends State<ExamSheet> {
                                         });
                                       },
                                       icon: const Icon(
-                                        FontAwesomeIcons.trashCan,
+                                        Icons.delete,
                                         size: 16,
                                         color: AppColors.posterRed,
                                       ),
@@ -666,7 +665,7 @@ class _ExamsManagerState extends State<ExamSheet> {
                       alignment: Alignment.centerRight,
                       child: AdminHoverButton(
                         title: 'أضف خيار',
-                        icon: FontAwesomeIcons.plus,
+                        icon: Icons.add,
                         onTap: () => _addOption(index),
                       ),
                     ),
@@ -683,7 +682,7 @@ class _ExamsManagerState extends State<ExamSheet> {
                       alignment: Alignment.centerLeft,
                       child: IconButton(
                         icon: const Icon(
-                          FontAwesomeIcons.trashCan,
+                          Icons.delete,
                           color: AppColors.posterRed,
                           size: 16,
                         ),
@@ -701,7 +700,7 @@ class _ExamsManagerState extends State<ExamSheet> {
         alignment: Alignment.centerRight,
         child: AdminHoverButton(
           title: 'أضف سؤال',
-          icon: FontAwesomeIcons.plus,
+          icon: Icons.add,
           onTap: _addQuestion,
         ),
       ),

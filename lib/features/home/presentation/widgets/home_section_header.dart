@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 
@@ -14,7 +13,7 @@ class HomeSectionHeader extends StatelessWidget {
     required this.title,
     required this.actionText,
     this.onViewAll,
-    this.actionIcon = FontAwesomeIcons.list,
+    this.actionIcon = Icons.list_rounded,
   });
 
   @override

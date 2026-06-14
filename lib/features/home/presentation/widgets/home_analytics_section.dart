@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/currency_formatter.dart';
 import 'package:mrmichaelashrafdashboard/features/home/presentation/widgets/home_stat_card.dart';
@@ -64,85 +63,85 @@ class HomeAnalyticsSection extends StatelessWidget {
       alignment: WrapAlignment.start,
       children: [
         HomeStatCard(
-          icon: FontAwesomeIcons.users,
+          icon: Icons.groups_rounded,
           title: 'إجمالي الطلاب',
           value: _n(b?.total),
           accent: AppColors.royalBlue,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.wifi,
+          icon: Icons.wifi_rounded,
           title: 'طلاب أونلاين',
           value: _n(b?.online),
           accent: AppColors.midBlue,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.buildingUser,
+          icon: Icons.business_rounded,
           title: 'طلاب السنتر',
           value: _n(b?.center),
           accent: AppColors.energyOrange,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.personHalfDress,
+          icon: Icons.man,
           title: 'طلاب',
           value: _n(b?.male),
           accent: AppColors.skyBlue,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.personDress,
+          icon: Icons.woman,
           title: 'طالبات',
           value: _n(b?.female),
           accent: AppColors.posterRed,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.userCheck,
+          icon: Icons.verified_user_rounded,
           title: 'حسابات مفعّلة',
           value: _n(b?.verified),
           accent: AppColors.pastelGreen,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.userXmark,
+          icon: Icons.person_off_rounded,
           title: 'حسابات غير مفعّلة',
           value: _n(b?.unverified),
           accent: AppColors.tomatoRed,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.sackDollar,
+          icon: Icons.savings_rounded,
           title: 'إجمالي الإيرادات',
           value: _money(totalRevenue),
           accent: AppColors.emeraldGreen,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.userPlus,
+          icon: Icons.person_add_alt_1_rounded,
           title: 'إجمالي الاشتراكات',
           value: _n(totalEnrollmentsCount),
           accent: AppColors.midBlue,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.bookOpen,
+          icon: Icons.menu_book_rounded,
           title: 'إجمالي الكورسات',
           value: _n(coursesCount),
           accent: AppColors.royalYellow,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.fileLines,
+          icon: Icons.description_rounded,
           title: 'إجمالي الامتحانات',
           value: _n(totalExamsCount),
           accent: AppColors.skyBlue,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.filePen,
+          icon: Icons.edit_note_rounded,
           title: 'امتحانات نشطة',
           value: _n(activeExamsCount),
           accent: AppColors.pastelGreen,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.bullhorn,
+          icon: Icons.campaign_rounded,
           title: 'إجمالي الملاحظات',
           value: _n(totalHighlightsCount),
           accent: AppColors.energyOrange,
         ),
         HomeStatCard(
-          icon: FontAwesomeIcons.solidBell,
+          icon: Icons.notifications_rounded,
           title: 'ملاحظات نشطة',
           value: _n(activeHighlightsCount),
           accent: AppColors.royalYellow,

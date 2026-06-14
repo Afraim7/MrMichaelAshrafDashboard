@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/button_state.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
@@ -59,8 +58,9 @@ class _DashboardSheetState extends State<DashboardSheet> {
   /// state. Without this, the dialog would be frozen at whatever isSaving was
   /// when the admin first tapped the trash icon — there'd be no loading
   /// indicator while the delete is in flight.
-  late final ValueNotifier<bool> _isSavingNotifier =
-      ValueNotifier<bool>(widget.isSaving);
+  late final ValueNotifier<bool> _isSavingNotifier = ValueNotifier<bool>(
+    widget.isSaving,
+  );
 
   @override
   void didUpdateWidget(covariant DashboardSheet oldWidget) {
@@ -158,7 +158,7 @@ class _DashboardSheetState extends State<DashboardSheet> {
           // Delete (left side)
           IconButton(
             icon: Icon(
-              FontAwesomeIcons.trashCan,
+              Icons.delete,
               color: AppColors.posterRed.withAlpha(
                 isExistingItem && isEditing ? 255 : 57,
               ),
@@ -178,8 +178,9 @@ class _DashboardSheetState extends State<DashboardSheet> {
                         description: deleteDescription,
                         lottiePath: deleteLottiePath,
                         onConfirm: onDelete,
-                        onConfirmState:
-                            saving ? ButtonState.loading : ButtonState.idle,
+                        onConfirmState: saving
+                            ? ButtonState.loading
+                            : ButtonState.idle,
                         confirmTitle: 'حذف',
                         cancelTitle: 'إلغاء',
                       ),
@@ -217,9 +218,7 @@ class _DashboardSheetState extends State<DashboardSheet> {
               transitionBuilder: (child, animation) =>
                   ScaleTransition(scale: animation, child: child),
               child: Icon(
-                isEditing
-                    ? FontAwesomeIcons.check
-                    : FontAwesomeIcons.penToSquare,
+                isEditing ? Icons.check : Icons.edit_rounded,
                 key: ValueKey(isEditing),
                 color: AppColors.skyBlue.withAlpha(isExistingItem ? 255 : 57),
               ),
@@ -251,11 +250,7 @@ class _DashboardSheetState extends State<DashboardSheet> {
             ),
           ),
           const SizedBox(width: 8),
-          AdminHoverButton(
-            title: 'إلغاء',
-            icon: FontAwesomeIcons.xmark,
-            onTap: onCancel,
-          ),
+          AdminHoverButton(title: 'إلغاء', icon: Icons.cancel, onTap: onCancel),
         ],
       ),
     );

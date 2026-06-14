@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/button_state.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/exam_status.dart';
@@ -278,7 +277,7 @@ class _StatTilesGrid extends StatelessWidget {
     final tiles = <Widget>[
       if (questionsCount != null)
         _MiniTile(
-          icon: FontAwesomeIcons.circleQuestion,
+          icon: Icons.quiz,
           value: '$questionsCount',
           label: 'سؤال',
           color: AppColors.midBlue,

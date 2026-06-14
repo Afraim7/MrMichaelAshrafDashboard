@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 
 /// Source of a payment record. Webhooked gateways (Paymob/Fawry/Stripe/PayPal)
@@ -43,15 +42,15 @@ extension PaymentGatewayX on PaymentGateway {
   IconData get icon {
     switch (this) {
       case PaymentGateway.paymob:
-        return FontAwesomeIcons.creditCard;
+        return Icons.credit_card_rounded;
       case PaymentGateway.fawry:
-        return FontAwesomeIcons.receipt;
+        return Icons.receipt_long_rounded;
       case PaymentGateway.stripe:
-        return FontAwesomeIcons.stripeS;
+        return Icons.payment;
       case PaymentGateway.paypal:
-        return FontAwesomeIcons.paypal;
+        return Icons.account_balance_wallet_rounded;
       case PaymentGateway.manual:
-        return FontAwesomeIcons.moneyBill;
+        return Icons.payments_rounded;
     }
   }
 }

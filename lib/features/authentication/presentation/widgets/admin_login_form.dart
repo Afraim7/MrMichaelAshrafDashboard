@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
@@ -68,7 +67,7 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
 
           // Email Field
           AuthTextField(
-            icon: FontAwesomeIcons.envelope,
+            icon: Icons.email,
             hint: 'البريد الألكتروني',
             keyboardType: TextInputType.emailAddress,
             controller: widget.emailController,
@@ -79,7 +78,7 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
 
           // Password Field
           AuthTextField(
-            icon: FontAwesomeIcons.lock,
+            icon: Icons.lock,
             hint: 'كلمة السر',
             keyboardType: TextInputType.text,
             controller: widget.passwordController,

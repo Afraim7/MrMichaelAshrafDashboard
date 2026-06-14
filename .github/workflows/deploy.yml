@@ -16,6 +16,10 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
+          # Pinned to match local dev. Floating 'stable' drifted to 3.44.2,
+          # where IconData became a final class and broke font_awesome_flutter
+          # 10.x. Bump this (and the package to v11) together in a planned PR.
+          flutter-version: '3.41.0'
           channel: 'stable'
 
       - name: Enable Web

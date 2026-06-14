@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/button_state.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
@@ -83,7 +82,7 @@ class ManagerLayout extends StatelessWidget {
               return ScaleTransition(scale: animation, child: child);
             },
             child: Icon(
-              isEditing ? FontAwesomeIcons.check : FontAwesomeIcons.penToSquare,
+              isEditing ? Icons.check : Icons.edit_rounded,
               key: ValueKey(isEditing),
               color: AppColors.skyBlue.withAlpha(isExistingItem ? 255 : 57),
             ),
@@ -117,7 +116,7 @@ class ManagerLayout extends StatelessWidget {
         ),
         IconButton(
           icon: Icon(
-            FontAwesomeIcons.trashCan,
+            Icons.delete,
             color: AppColors.posterRed.withAlpha(
               (isExistingItem && isEditing) ? 255 : 57,
             ),
@@ -159,11 +158,7 @@ class ManagerLayout extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        AdminHoverButton(
-          title: 'إلغاء',
-          icon: FontAwesomeIcons.xmark,
-          onTap: onCancel,
-        ),
+        AdminHoverButton(title: 'إلغاء', icon: Icons.cancel, onTap: onCancel),
       ],
     );
   }

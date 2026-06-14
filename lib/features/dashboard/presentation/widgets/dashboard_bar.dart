@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/features/dashboard/logic/dashboard_center_cubit.dart';
@@ -85,7 +84,7 @@ class DashboardBar extends StatelessWidget {
                   const SizedBox(width: 10),
                   _barIcon(
                     context,
-                    FontAwesomeIcons.penFancy,
+                    Icons.edit_rounded,
                     3,
                     currentIndex,
                     tooltip: 'هايلايتس',
@@ -167,7 +166,7 @@ class DashboardBar extends StatelessWidget {
                   const SizedBox(height: 20),
                   _barIcon(
                     context,
-                    FontAwesomeIcons.penFancy,
+                    Icons.edit_rounded,
                     3,
                     currentIndex,
                     tooltip: 'هايلايتس',

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mrmichaelashrafdashboard/core/constants/app_strings.dart';
@@ -311,7 +310,7 @@ class _HighlightsManagerState extends State<HighlightSheet> {
                         _onFieldChanged();
                       },
                       hint: 'اختر تاريخ البداية',
-                      icon: FontAwesomeIcons.calendar,
+                      icon: Icons.calendar_month,
                       firstDate: DateTime.now(),
                     ),
                     _FieldError(message: _startDateError),
@@ -331,7 +330,7 @@ class _HighlightsManagerState extends State<HighlightSheet> {
                     _onFieldChanged();
                   },
                   hint: 'اختر تاريخ النهاية',
-                  icon: FontAwesomeIcons.calendar,
+                  icon: Icons.calendar_month,
                   firstDate: _startDate ?? DateTime.now(),
                 ),
                 _FieldError(message: _endDateError),

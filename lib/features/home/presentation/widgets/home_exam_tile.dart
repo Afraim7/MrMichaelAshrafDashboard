@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
@@ -50,7 +49,7 @@ class HomeExamTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    FontAwesomeIcons.fileLines,
+                    Icons.description_rounded,
                     color: accent,
                     size: 18,
                   ),
