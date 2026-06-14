@@ -1,48 +1,53 @@
 import 'dart:convert';
-import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mrmichaelashrafdashboard/core/constants/app_strings.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/exam_status.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
 import 'package:mrmichaelashrafdashboard/features/exams/data/models/question.dart';
 
 class Exam {
-  final String id;
-  final String? courseID;
+  final String examID;
   final String title;
   final String? description;
   final ExamStatus? state;
-  final String grade;
+  final Grade grade;
   final DateTime? startTime;
   final DateTime? endTime;
   final int? duration;
   final List<Question>? questions;
+  final int? maxTrials;
+  final bool isVisible;
 
   const Exam({
-    required this.id,
-    this.courseID,
+    required this.examID,
     required this.title,
     this.description,
     this.state,
-    required this.grade,
+    this.grade = Grade.allGrades,
     this.startTime,
     this.endTime,
     this.duration,
     this.questions,
+    this.maxTrials,
+    this.isVisible = true,
   });
 
   Exam copyWith({
-    String? id,
+    String? examID,
     String? courseID,
     String? title,
     String? description,
     ExamStatus? state,
-    String? grade,
+    Grade? grade,
     DateTime? startTime,
     DateTime? endTime,
     int? duration,
     List<Question>? questions,
+    int? maxTrials,
+    bool? isVisible,
   }) {
     return Exam(
-      id: id ?? this.id,
-      courseID: courseID ?? this.courseID,
+      examID: examID ?? this.examID,
       title: title ?? this.title,
       description: description ?? this.description,
       state: state ?? this.state,
@@ -51,20 +56,23 @@ class Exam {
       endTime: endTime ?? this.endTime,
       duration: duration ?? this.duration,
       questions: questions ?? this.questions,
+      maxTrials: maxTrials ?? this.maxTrials,
+      isVisible: isVisible ?? this.isVisible,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'courseID': courseID,
+      'id': examID,
       'title': title,
       'description': description,
-      'grade': grade,
-      'startTime': startTime?.millisecondsSinceEpoch,
-      'endTime': endTime?.millisecondsSinceEpoch,
+      'grade': grade.name,
+      'startTime': startTime?.toIso8601String(),
+      'endTime': endTime?.toIso8601String(),
       'duration': duration,
       'questions': questions?.map((q) => q.toMap()).toList(),
+      'maxTrials': maxTrials,
+      'isVisible': isVisible,
     };
   }
 
@@ -81,28 +89,52 @@ class Exam {
       }
     }
 
+    final examId = map['id'] ?? '';
+    final rawQuestions = map['questions'] != null
+        ? List<Question>.from(
+            (map['questions'] as List).map(
+              (q) => Question.fromMap(Map<String, dynamic>.from(q)),
+            ),
+          )
+        : null;
+
+    final normalizedQuestions = rawQuestions?.asMap().entries.map((entry) {
+      final index = entry.key;
+      final question = entry.value;
+      if (question.questionID.isNotEmpty) return question;
+      return Question(
+        questionID: '${examId}_$index',
+        question: question.question,
+        mark: question.mark,
+        options: question.options,
+        correctAnswer: question.correctAnswer,
+      );
+    }).toList();
+
     return Exam(
-      id: map['id'] ?? '',
-      courseID: map['courseID'],
+      examID: examId,
       title: map['title'] ?? '',
       description: map['description'],
       state: state,
-      grade: map['grade'] ?? '',
-      startTime: map['startTime'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['startTime'])
-          : null,
-      endTime: map['endTime'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['endTime'])
-          : null,
+      grade: Grade.values.firstWhere(
+        (g) => g.name == map['grade'],
+        orElse: () => Grade.allGrades,
+      ),
+      startTime: _parseDateTime(map['startTime']),
+      endTime: _parseDateTime(map['endTime']),
       duration: map['duration'] != null ? map['duration'] as int : null,
-      questions: map['questions'] != null
-          ? List<Question>.from(
-              (map['questions'] as List).map(
-                (q) => Question.fromMap(Map<String, dynamic>.from(q)),
-              ),
-            )
-          : null,
+      questions: normalizedQuestions,
+      maxTrials: map['maxTrials'] as int?,
+      isVisible: map['isVisible'] as bool? ?? true,
     );
+  }
+
+  static DateTime? _parseDateTime(dynamic v) {
+    if (v == null) return null;
+    if (v is Timestamp) return v.toDate();
+    if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+    if (v is String) return DateTime.tryParse(v);
+    return null;
   }
 
   String toJson() => json.encode(toMap());
@@ -111,12 +143,38 @@ class Exam {
 
   double fullExamMark() {
     if (questions == null || questions!.isEmpty) return 0.0;
-    return questions!.fold(0.0, (sum, q) => sum + q.mark);
+    return questions!.fold(0.0, (acc, q) => acc + q.mark);
   }
 
-  ExamStatus computeStudentExamState({bool hasResult = false}) {
+  /// Whether results (score + answer key) may be shown to the student.
+  /// Sealed until the exam window closes; if there's no [endTime] the exam is
+  /// a practice/open one, so results are visible immediately.
+  bool resultsVisible() {
+    if (endTime == null) return true;
+    return DateTime.now().isAfter(endTime!);
+  }
+
+  /// Absolute moment the running exam must end, given when the student
+  /// [startedAt]. It's the earlier of (start + duration) and the exam's
+  /// [endTime]. Returns null for an untimed exam (no duration, no endTime).
+  ///
+  /// This caps late-starters: start 11:55, end 12:00, duration 60 → 5 minutes.
+  DateTime? effectiveDeadline(DateTime startedAt) {
+    final byDuration = duration != null
+        ? startedAt.add(Duration(minutes: duration!))
+        : null;
+    if (byDuration != null && endTime != null) {
+      return byDuration.isBefore(endTime!) ? byDuration : endTime;
+    }
+    return byDuration ?? endTime;
+  }
+
+  ExamStatus computeUserExamState({bool hasResult = false}) {
     final now = DateTime.now();
-    if (hasResult) return ExamStatus.completed;
+    if (hasResult) {
+      // Submitted: hold the result back until the window closes.
+      return resultsVisible() ? ExamStatus.completed : ExamStatus.underReview;
+    }
 
     if (startTime == null && endTime == null) return ExamStatus.upcoming;
 
@@ -137,24 +195,6 @@ class Exam {
     }
 
     return ExamStatus.upcoming;
-  }
-
-  ExamStatus computeAdminExamState() {
-    final now = DateTime.now();
-
-    if (startTime == null || endTime == null) {
-      return ExamStatus.upcoming;
-    }
-
-    if (now.isBefore(startTime!)) {
-      return ExamStatus.upcoming;
-    }
-
-    if (now.isAfter(endTime!)) {
-      return ExamStatus.done;
-    }
-
-    return ExamStatus.active;
   }
 
   String examDateRange(DateTime? startDate, DateTime? endDate) {

@@ -10,6 +10,10 @@ class Highlight {
   final DateTime? endTime;
   final Grade grade;
 
+  /// Admin-controlled visibility flag. When false, the highlight is hidden
+  /// from students regardless of its time window.
+  final bool isVisible;
+
   Highlight({
     this.id = '',
     required this.message,
@@ -17,6 +21,7 @@ class Highlight {
     this.startTime,
     this.endTime,
     this.grade = Grade.allGrades,
+    this.isVisible = true,
   });
 
   Highlight copyWith({
@@ -26,6 +31,7 @@ class Highlight {
     DateTime? startTime,
     DateTime? endTime,
     Grade? grade,
+    bool? isVisible,
   }) {
     return Highlight(
       id: id ?? this.id,
@@ -34,6 +40,7 @@ class Highlight {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       grade: grade ?? this.grade,
+      isVisible: isVisible ?? this.isVisible,
     );
   }
 
@@ -44,6 +51,7 @@ class Highlight {
       'startDate': startTime?.toIso8601String(),
       'endDate': endTime?.toIso8601String(),
       'grade': grade.name,
+      'isVisible': isVisible,
     };
   }
 
@@ -55,22 +63,26 @@ class Highlight {
         (e) => e.name == map['type'],
         orElse: () => HighlightType.quote,
       ),
-      startTime: map['startDate'] is String
-          ? DateTime.tryParse(map['startDate'])
-          : (map['startDate'] != null
-                ? (map['startDate'] as Timestamp).toDate()
-                : null),
-      endTime: map['endDate'] is String
-          ? DateTime.tryParse(map['endDate'])
-          : (map['endDate'] != null
-                ? (map['endDate'] as Timestamp).toDate()
-                : null),
-      grade: map['grade'] != null
-          ? Grade.values.firstWhere(
-              (e) => e.name == map['grade'],
-              orElse: () => Grade.allGrades,
-            )
-          : Grade.allGrades,
+      startTime:
+          map['startDate'] is String
+              ? DateTime.tryParse(map['startDate'])
+              : (map['startDate'] != null
+                  ? (map['startDate'] as Timestamp).toDate()
+                  : null),
+      endTime:
+          map['endDate'] is String
+              ? DateTime.tryParse(map['endDate'])
+              : (map['endDate'] != null
+                  ? (map['endDate'] as Timestamp).toDate()
+                  : null),
+      grade:
+          map['grade'] != null
+              ? Grade.values.firstWhere(
+                (e) => e.name == map['grade'],
+                orElse: () => Grade.allGrades,
+              )
+              : Grade.allGrades,
+      isVisible: map['isVisible'] as bool? ?? true,
     );
   }
 
@@ -81,17 +93,8 @@ class Highlight {
 
   bool isActive() {
     final now = DateTime.now();
-    if (startTime == null && endTime == null) return true;
-    if (startTime != null && endTime != null) {
-      return now.isAfter(startTime!.subtract(const Duration(days: 1))) &&
-          now.isBefore(endTime!.add(const Duration(days: 1)));
-    }
-    if (startTime != null) {
-      return now.isAfter(startTime!.subtract(const Duration(days: 1)));
-    }
-    if (endTime != null) {
-      return now.isBefore(endTime!.add(const Duration(days: 1)));
-    }
-    return true;
+    final start = startTime ?? DateTime(now.year, now.month, now.day, 0, 0, 0);
+    final end = endTime ?? DateTime(now.year, now.month, now.day, 23, 59, 59);
+    return !now.isBefore(start) && !now.isAfter(end);
   }
 }

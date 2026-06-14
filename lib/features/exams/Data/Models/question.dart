@@ -1,14 +1,14 @@
 import 'dart:convert';
 
 class Question {
-  final String id;
+  final String questionID;
   final String question;
   final double mark;
   final List<String>? options;
   final String correctAnswer;
 
   const Question({
-    required this.id,
+    required this.questionID,
     required this.question,
     required this.mark,
     this.options,
@@ -17,7 +17,7 @@ class Question {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'questionID': questionID,
       'question': question,
       'mark': mark,
       'options': options,
@@ -27,15 +27,17 @@ class Question {
 
   factory Question.fromMap(Map<String, dynamic> map) {
     return Question(
-      id: map['id'] ?? '',
+      questionID: map['questionID'] ?? '',
       question: map['question'] ?? '',
       mark: (map['mark'] ?? 0).toDouble(),
-      options: map['options'] != null ? List<String>.from(map['options']) : null,
+      options:
+          map['options'] != null ? List<String>.from(map['options']) : null,
       correctAnswer: map['correctAnswer'] ?? '',
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory Question.fromJson(String source) => Question.fromMap(json.decode(source));
+  factory Question.fromJson(String source) =>
+      Question.fromMap(json.decode(source));
 }

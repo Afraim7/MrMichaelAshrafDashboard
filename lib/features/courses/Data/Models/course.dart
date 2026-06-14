@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/subject.dart';
-
-import '../../../exams/data/models/lesson.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/data/models/course_comment.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/data/models/course_lesson.dart';
 
 class Course {
   final String courseID;
@@ -11,17 +11,15 @@ class Course {
   final String description;
   final String teacher;
   final List<String> content;
-  final DateTime startDate;
-  final DateTime? endDate;
-  final int durationDays;
   final double discount;
   final int discountDueDate;
   final double price;
   final int enrollmentCount;
   final Grade grade;
   final Subject subject;
-  final List<Lesson> lessons;
-  final List<Map<String, dynamic>> comments;
+  final List<CourseLesson> lessons;
+  final List<CourseComment> comments;
+  final bool isVisible;
 
   Course({
     required this.courseID,
@@ -33,9 +31,6 @@ class Course {
     required this.teacher,
     required this.description,
     required this.content,
-    required this.startDate,
-    this.endDate,
-    required this.durationDays,
     required this.discount,
     required this.discountDueDate,
     required this.price,
@@ -44,6 +39,7 @@ class Course {
     required this.subject,
     this.lessons = const [],
     this.comments = const [],
+    this.isVisible = true,
   });
 
   // Price Calculation Logic
@@ -54,43 +50,45 @@ class Course {
   double getFinalPrice() {
     double basePrice = getOriginalPrice();
 
-    // Check if discount is active based on date (assuming discountDueDate is Timestamp milliseconds)
-    bool isDiscountActive = false;
-    if (discountDueDate > 0) {
-      final now = DateTime.now();
-      final dueDate = DateTime.fromMillisecondsSinceEpoch(discountDueDate);
-      if (now.isBefore(dueDate)) {
-        isDiscountActive = true;
-      }
-    } else {
-      // If no date set but discount > 0, maybe it's always active?
-      // Or assume 0 means no due date limit?
-      if (discount > 0) isDiscountActive = true;
+    // 1. Check if discount is applicable
+    if (!hasDiscount()) {
+      return basePrice;
     }
 
-    if (isDiscountActive) {
-      // Discount is treated as a percentage (e.g., 20 means 20% off)
-      double discountPercentage = discount;
+    // 2. Calculate Percentage Discount
+    // discount is now 0-100 representing percentage
+    double discountAmount = basePrice * (discount / 100);
+    double finalPrice = basePrice - discountAmount;
 
-      // Ensure percentage is reasonable (0-100)
-      if (discountPercentage < 0) discountPercentage = 0;
-      if (discountPercentage > 100) discountPercentage = 100;
-
-      double finalPrice = basePrice - (basePrice * (discountPercentage / 100));
-      return finalPrice < 0 ? 0 : finalPrice;
-    }
-
-    return basePrice;
+    return finalPrice < 0 ? 0 : finalPrice;
   }
 
   bool hasDiscount() {
-    return getFinalPrice() < getOriginalPrice();
+    if (discount <= 0) return false;
+
+    // Check Expiry
+    if (discountDueDate > 0) {
+      final now = DateTime.now();
+      final dueDate = DateTime.fromMillisecondsSinceEpoch(discountDueDate);
+      if (now.isAfter(dueDate)) {
+        return false; // Expired
+      }
+    }
+
+    return true;
   }
 
-  bool get isEverGreen => endDate == null;
+  /// Discount percentage as a whole number (e.g. 25 for 25%).
+  int get discountPercent => discount.round();
 
-  bool isActive(DateTime now) =>
-      !now.isBefore(startDate) && (endDate == null || !now.isAfter(endDate!));
+  /// Time remaining on the discount, or null if there's no live, dated
+  /// discount. Drives the "ينتهي العرض خلال…" urgency chip.
+  Duration? discountTimeLeft() {
+    if (!hasDiscount() || discountDueDate <= 0) return null;
+    final due = DateTime.fromMillisecondsSinceEpoch(discountDueDate);
+    final left = due.difference(DateTime.now());
+    return left.isNegative ? null : left;
+  }
 
   int get totalLessons => lessons.length;
 
@@ -102,10 +100,6 @@ class Course {
       'description': description,
       'teacher': teacher,
       'content': content,
-      'startDate': startDate
-          .toIso8601String(), // Changed to String as per request
-      'endDate': endDate?.toIso8601String(), // Changed to String as per request
-      'durationDays': durationDays,
       'discount': discount,
       'discountDueDate': discountDueDate,
       'price': price,
@@ -113,7 +107,8 @@ class Course {
       'grade': grade.name,
       'subject': subject.name,
       'lessons': lessons.map((l) => l.toMap()).toList(),
-      'comments': comments,
+      'comments': comments.map((c) => c.toMap()).toList(),
+      'isVisible': isVisible,
     };
   }
 
@@ -125,18 +120,11 @@ class Course {
       description: map['description'] ?? '',
       teacher: map['teacher'] ?? '',
       content: List<String>.from(map['content'] ?? []),
-      startDate: map['startDate'] is int
-          ? DateTime.fromMillisecondsSinceEpoch(map['startDate'])
-          : DateTime.parse(map['startDate']),
-      endDate: map['endDate'] != null
-          ? (map['endDate'] is int
-                ? DateTime.fromMillisecondsSinceEpoch(map['endDate'])
-                : DateTime.parse(map['endDate']))
-          : null,
-      durationDays: map['durationDays'] ?? 0,
       discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
       discountDueDate: map['discountDueDate'] ?? 0,
-      price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      price:
+          (map['price'] as num?)?.toDouble() ??
+          0.0, // Changed to single price field
       enrollmentCount: map['enrollmentCount'] ?? 0,
       grade: Grade.values.firstWhere(
         (g) => g.name == map['grade'],
@@ -147,11 +135,16 @@ class Course {
         orElse: () => Subject.geography,
       ),
       lessons: map['lessons'] != null
-          ? List<Lesson>.from(map['lessons'].map((x) => Lesson.fromMap(x)))
+          ? List<CourseLesson>.from(
+              (map['lessons'] as List).map((x) => CourseLesson.fromMap(x)),
+            )
           : [],
       comments: map['comments'] != null
-          ? List<Map<String, dynamic>>.from(map['comments'])
+          ? List<CourseComment>.from(
+              map['comments'].map((x) => CourseComment.fromMap(x)),
+            )
           : [],
+      isVisible: map['isVisible'] as bool? ?? true,
     );
   }
 

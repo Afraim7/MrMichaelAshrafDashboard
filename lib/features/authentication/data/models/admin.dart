@@ -1,4 +1,4 @@
-import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/constants/app_assets.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/gender.dart';
 
 class Admin {

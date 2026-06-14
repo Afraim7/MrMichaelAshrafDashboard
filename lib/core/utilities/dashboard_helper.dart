@@ -4,21 +4,19 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/core/enums/sub_button_state.dart';
+import 'package:mrmichaelashrafdashboard/core/constants/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/button_state.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
-import 'package:mrmichaelashrafdashboard/features/exams/logic/admin_exams_cubit.dart';
-import 'package:mrmichaelashrafdashboard/features/courses/presentation/widgets/courses_manager.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/presentation/widgets/course_enrollment_sheet.dart';
+import 'package:mrmichaelashrafdashboard/features/courses/presentation/widgets/course_sheet.dart';
 import 'package:mrmichaelashrafdashboard/features/exams/presentation/widgets/exam_results_sheet.dart';
-import 'package:mrmichaelashrafdashboard/features/exams/presentation/widgets/exams_manager.dart';
-import 'package:mrmichaelashrafdashboard/features/highlights/presentation/widgets/highlights_manager.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/app_bottom_sheet.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/app_dialog.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/app_snack_bar.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/loading_dialog.dart';
+import 'package:mrmichaelashrafdashboard/features/exams/presentation/widgets/exam_sheet.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/presentation/widgets/highlight_sheet.dart';
+import 'package:mrmichaelashrafdashboard/shared/dialogs/app_bottom_sheet.dart';
+import 'package:mrmichaelashrafdashboard/shared/dialogs/app_dialog.dart';
+import 'package:mrmichaelashrafdashboard/shared/widgets/app_snack_bar.dart';
 import 'package:mrmichaelashrafdashboard/features/courses/data/models/course.dart';
 import 'package:mrmichaelashrafdashboard/features/exams/data/models/exam.dart';
 import 'package:mrmichaelashrafdashboard/features/highlights/data/models/highlight.dart';
@@ -118,6 +116,16 @@ class DashboardHelper {
     ).showSnackBar(context);
   }
 
+  /// Warning variant — used for soft-confirmation messages like "you have
+  /// unsaved changes" before letting the user discard a manager form.
+  static void showWarningBar(BuildContext context, {required String message}) {
+    AppSnackBar(
+      message: message,
+      backgroundColor: AppColors.royalYellow.withAlpha(230),
+      icon: AppAssets.animations.yellowWarning,
+    ).showSnackBar(context);
+  }
+
   static Widget appCircularInd = CircularProgressIndicator(
     strokeWidth: 2,
     color: AppColors.skyBlue,
@@ -161,10 +169,11 @@ class DashboardHelper {
     Function()? onPublish,
     Function()? onDelete,
   }) {
-    openTheBottomSheet(
-      context,
-      child: CoursesManager(
-        context: context,
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CourseSheet(
         existingCourse: existingCourse,
         onDelete: onDelete,
         onSaveUpdates: onSaveUpdates,
@@ -180,9 +189,11 @@ class DashboardHelper {
     Function()? onPublish,
     Function()? onDelete,
   }) {
-    openTheBottomSheet(
-      context,
-      child: ExamsManager(
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ExamSheet(
         existingExam: existingExam,
         onDelete: onDelete,
         onSaveUpdates: onSaveUpdates,
@@ -195,58 +206,38 @@ class DashboardHelper {
     required BuildContext context,
     Highlight? existingHighlight,
   }) {
-    openTheBottomSheet(
-      context,
-      child: SingleChildScrollView(
-        child: HighlightsManager(existingHighlight: existingHighlight),
-      ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => HighlightSheet(existingHighlight: existingHighlight),
     );
   }
 
+  /// Opens the [ExamResultsSheet]. The sheet fetches its own data and shows
+  /// its own loading / error states — no pre-fetch needed here.
+  ///
+  /// Returns a future that completes when the sheet is dismissed, so callers
+  /// (e.g. exams_center) can `await` it to drive per-card loading indicators.
   static Future<void> showExamResultsSheet({
     required BuildContext context,
     required Exam exam,
-  }) async {
-    showLoadingDialog(context);
-    try {
-      final cubit = context.read<AdminExamsCubit>();
-      final results = await cubit.fetchExamResults(exam.id);
-      final studentIds = results.map((r) => r.studentId).toSet().toList();
-      final studentNamesMap = await cubit.fetchStudentNames(studentIds);
-
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
-
-      if (context.mounted) {
-        openTheBottomSheet(
-          context,
-          child: ExamResultsSheet(
-            exam: exam,
-            results: results,
-            studentNamesMap: studentNamesMap,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        showErrorBar(context, error: 'فشل تحميل نتائج الامتحان');
-      }
-    }
+  }) {
+    return AppBottomSheet(
+      child: ExamResultsSheet(exam: exam),
+    ).showBottomSheet(context);
   }
 
-  static void showLoadingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 10,
-        insetPadding: EdgeInsets.zero,
-        child: LoadingDialog(),
-      ),
-    );
+  /// Opens the [CourseEnrollmentsSheet]. Mirrors [showExamResultsSheet] —
+  /// the sheet owns its own loading / error / mutation lifecycle, so the
+  /// caller just awaits dismissal.
+  static Future<void> showCourseEnrollmentsSheet({
+    required BuildContext context,
+    required Course course,
+  }) {
+    return AppBottomSheet(
+      child: CourseEnrollmentSheet(course: course),
+    ).showBottomSheet(context);
   }
 
   static void showAppDialog(
@@ -255,7 +246,7 @@ class DashboardHelper {
     required String description,
     required String lottiePath,
     required VoidCallback onConfirm,
-    SubButtonState? onConfirmState,
+    ButtonState? onConfirmState,
     bool listenToCubit = false,
     String cancelTitle = 'إلغاء',
     String confirmTitle = 'تأكيد',

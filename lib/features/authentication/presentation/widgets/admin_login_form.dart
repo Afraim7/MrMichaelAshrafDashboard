@@ -4,22 +4,22 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/app_validator.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/auth_text_field.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/app_sub_button.dart';
-import 'package:mrmichaelashrafdashboard/core/enums/sub_button_state.dart';
+import 'package:mrmichaelashrafdashboard/shared/widgets/auth_text_field.dart';
+import 'package:mrmichaelashrafdashboard/shared/widgets/dashboard_button.dart';
+import 'package:mrmichaelashrafdashboard/core/enums/button_state.dart';
 
 class AdminLoginForm extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final VoidCallback onAdminLogin;
-  final SubButtonState buttonState;
+  final ButtonState buttonState;
 
   const AdminLoginForm({
     super.key,
     required this.emailController,
     required this.passwordController,
     required this.onAdminLogin,
-    this.buttonState = SubButtonState.idle,
+    this.buttonState = ButtonState.idle,
   });
 
   @override
@@ -94,7 +94,7 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
           const SizedBox(height: 40),
 
           // Submit Button
-          AppSubButton(
+          DashboardButton(
             title: 'تسجيل الدخول',
             backgroundColor: AppColors.royalBlue,
             state: widget.buttonState,

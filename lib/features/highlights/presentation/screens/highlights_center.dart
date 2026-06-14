@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
-import 'package:mrmichaelashrafdashboard/core/config/app_strings.dart';
+import 'package:mrmichaelashrafdashboard/core/config/dashboard_configs.dart';
+import 'package:mrmichaelashrafdashboard/core/constants/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/constants/app_strings.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/grade.dart';
-import 'package:mrmichaelashrafdashboard/core/enums/sub_button_state.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
-import 'package:mrmichaelashrafdashboard/features/highlights/logic/admin_highlights_cubit.dart';
-import 'package:mrmichaelashrafdashboard/features/highlights/logic/admin_highlights_state.dart';
-import 'package:mrmichaelashrafdashboard/features/highlights/presentation/widgets/admin_highlight_card.dart';
-import 'package:mrmichaelashrafdashboard/features/highlights/presentation/widgets/highlights_analytics_section.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/dashboard_screen_header.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/firebase_error_messages.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/logic/highlights_cubit.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/logic/highlights_state.dart';
+import 'package:mrmichaelashrafdashboard/features/highlights/presentation/widgets/highlight_card.dart';
+import 'package:mrmichaelashrafdashboard/features/home/data/models/top_bar_action.dart';
 import 'package:mrmichaelashrafdashboard/features/highlights/data/models/highlight.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/app_default_screen.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/grading_filters.dart';
-import 'package:mrmichaelashrafdashboard/shared/components/app_sub_button.dart';
+import 'package:mrmichaelashrafdashboard/shared/views/empty_view.dart';
+import 'package:mrmichaelashrafdashboard/shared/views/error_view.dart';
+import 'package:mrmichaelashrafdashboard/shared/views/loading_view.dart';
+import 'package:mrmichaelashrafdashboard/shared/widgets/filters.dart';
+import 'package:mrmichaelashrafdashboard/shared/widgets/pagination_bar.dart';
+import 'package:mrmichaelashrafdashboard/shared/widgets/responsive_grid.dart';
+import 'package:mrmichaelashrafdashboard/shared/widgets/screen_top_bar.dart';
 
 class HighlightsCenter extends StatefulWidget {
   const HighlightsCenter({super.key});
@@ -26,175 +29,155 @@ class HighlightsCenter extends StatefulWidget {
 
 class _HighlightsCenterState extends State<HighlightsCenter> {
   Grade _selectedGrade = Grade.allGrades;
-  List<Highlight> _highlights = [];
-  Future<void>? _refreshFuture;
+
+  List<Highlight> _pageHighlights = const [];
+  int _currentPage = 1;
+  int _totalCount = 0;
+  bool _isPageLoading = true;
+  String? _pageError;
 
   @override
   void initState() {
     super.initState();
-    context.read<AdminHighlightsCubit>().fetchAllHighlights();
+    _loadPage(1, refetchCount: true);
+  }
+
+  String? get _gradeFilter =>
+      _selectedGrade == Grade.allGrades ? null : _selectedGrade.name;
+
+  Future<void> _loadPage(int page, {bool refetchCount = false}) async {
+    setState(() {
+      _isPageLoading = true;
+      _pageError = null;
+    });
+    try {
+      final cubit = context.read<HighlightsCubit>();
+      final results = await Future.wait([
+        cubit.fetchHighlightsPage(
+          page: page,
+          pageSize: DashboardConfigs.pageSize,
+          gradeName: _gradeFilter,
+        ),
+        if (refetchCount) cubit.getHighlightsCount(gradeName: _gradeFilter),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _pageHighlights = results[0] as List<Highlight>;
+        if (refetchCount) _totalCount = results[1] as int;
+        _currentPage = page;
+        _isPageLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final translated = FirebaseErrorTranslator.translate(
+        e,
+        fallback: AppStrings.errors.notesLoadFailed,
+      );
+      setState(() {
+        _isPageLoading = false;
+        _pageError = translated.message;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.appBlack,
-      body: BlocConsumer<AdminHighlightsCubit, AdminHighlightsState>(
+      body: BlocListener<HighlightsCubit, HighlightsState>(
         listener: (context, state) {
-          if (state is HighlightsLoaded) {
-            setState(() {
-              _highlights = state.highlights;
-            });
-          } else if (state is HighlightsError) {
-            DashboardHelper.showErrorBar(context, error: state.message);
+          if (state.errorMessage != null && _pageHighlights.isNotEmpty) {
+            DashboardHelper.showErrorBar(context, error: state.errorMessage!);
+          } else if (state is DeleteHighlightSuccess ||
+              state is PublishHighlightSuccess ||
+              state is SaveHighlightUpdatesSuccess ||
+              state is ToggleHighlightVisibilitySuccess) {
+            // Re-fetch so the grid reflects the new visibility / content.
+            // Delete shrinks the count → refetch it; visibility toggle keeps
+            // the count, so only the page slice needs refreshing, but
+            // refetching the count is cheap and keeps one code path.
+            _loadPage(_currentPage, refetchCount: true);
           }
         },
-        builder: (context, state) {
-          bool emptyHighlightList = _highlights.isEmpty;
-          bool isLoading = state is LoadingHighlights;
-
-          return RefreshIndicator(
-            backgroundColor: AppColors.cardDark,
-            color: AppColors.midBlue,
-            onRefresh: () {
-              _refreshFuture ??= _refreshHighlights().whenComplete(() {
-                _refreshFuture = null;
-              });
-              return _refreshFuture!;
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: DashboardHelper.screenWidth > 600
-                        ? 20
-                        : DashboardHelper.getDashboardBarTopSpacing(context),
-                  ),
-
-                  // TITLE
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: DashboardScreenHeader(
-                      title: 'الملاحظات',
-                      describtion:
-                          'إدارة وعرض جميع الملاحظات والإعلانات المنشورة في التطبيق',
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ScreenTopBar(
+                title: 'الملاحظات',
+                subtitle:
+                    'إدارة وعرض جميع الملاحظات والإعلانات المنشورة في التطبيق',
+                actions: [
+                  TopBarAction(
+                    label: 'إضافة ملاحظة جديدة',
+                    onPressed: () => DashboardHelper.showHighlightManagerSheet(
+                      context: context,
                     ),
+                    isPrimary: true,
                   ),
-
-                  // ANALYTICS
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: HighlightsAnalyticsSection(highlights: _highlights),
-                  ),
-
-                  // PUBLISH NEW HIGHLIGHT BUTTON
-                  Align(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 70,
-                      ),
-                      child: SizedBox(
-                        width: 230,
-                        child: AppSubButton(
-                          backgroundColor: AppColors.royalBlue,
-                          title: 'نشر ملاحظة جديدة',
-                          onTap: () =>
-                              DashboardHelper.showHighlightManagerSheet(
-                                context: context,
-                              ),
-                          state: SubButtonState.idle,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  GradingFilters(
-                    selectedGrade: _selectedGrade,
-                    onChanged: (selectedValue) {
-                      setState(() => _selectedGrade = selectedValue);
-
-                      if (selectedValue == Grade.allGrades) {
-                        context
-                            .read<AdminHighlightsCubit>()
-                            .fetchAllHighlights();
-                      } else {
-                        context
-                            .read<AdminHighlightsCubit>()
-                            .fetchHighlightsByGrade(selectedValue.name);
-                      }
-                    },
-                  ),
-
-                  // GRID
-                  if (!emptyHighlightList)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          int crossAxisCount = constraints.maxWidth < 600
-                              ? 1
-                              : constraints.maxWidth < 1000
-                              ? 2
-                              : constraints.maxWidth < 1400
-                              ? 3
-                              : 4;
-
-                          return MasonryGridView.count(
-                            crossAxisCount: crossAxisCount,
-                            mainAxisSpacing: 20,
-                            crossAxisSpacing: 20,
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: _highlights.length,
-                            itemBuilder: (context, index) {
-                              return AdminHighlightCard(
-                                highlight: _highlights[index],
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    )
-                  // LOADING
-                  else if (isLoading)
-                    SizedBox(
-                      height: 300,
-                      child: Center(child: DashboardHelper.appCircularInd),
-                    )
-                  // EMPTY STATE
-                  else
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: AppDefaultScreen(
-                        message: _selectedGrade == Grade.allGrades
-                            ? AppStrings.emptyStates.noHighlights
-                            : AppStrings.emptyStates.noHighlightsForGrade,
-                        // Use a highlights-specific empty state animation.
-                        animationPath: AppAssets.animations.emptyHighlightList,
-                      ),
-                    ),
-
-                  const SizedBox(height: 30),
                 ],
               ),
-            ),
-          );
-        },
+
+              Filters(
+                selectedFilter: _selectedGrade,
+                items: Grade.values
+                    .map((g) => FilterItem<Grade>(value: g, title: g.label))
+                    .toList(),
+                onChanged: (selectedValue) {
+                  setState(() {
+                    _selectedGrade = selectedValue;
+                    _pageHighlights = const [];
+                    _currentPage = 1;
+                    _isPageLoading = true;
+                    _pageError = null;
+                  });
+                  _loadPage(1, refetchCount: true);
+                },
+              ),
+
+              _buildBody(),
+
+              PaginationBar(
+                currentPage: _currentPage,
+                totalItems: _totalCount,
+                pageSize: DashboardConfigs.pageSize,
+                isLoading: _isPageLoading,
+                onPageChange: (p) => _loadPage(p),
+              ),
+
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  // Returns the correct cubit fetch call depending on the grade filter.
-  Future<void> _refreshHighlights() {
-    final cubit = context.read<AdminHighlightsCubit>();
-    if (_selectedGrade == Grade.allGrades) {
-      return cubit.fetchAllHighlights();
+  Widget _buildBody() {
+    if (_pageError != null && _pageHighlights.isEmpty) {
+      return ErrorView(
+        message: _pageError!,
+        animationPath: AppAssets.animations.emptyHighlightList,
+        onRetry: () => _loadPage(_currentPage, refetchCount: true),
+      );
     }
-    return cubit.fetchHighlightsByGrade(_selectedGrade.name);
+    if (_isPageLoading && _pageHighlights.isEmpty) {
+      return const LoadingView();
+    }
+    if (_pageHighlights.isEmpty) {
+      return EmptyView(
+        message: _selectedGrade == Grade.allGrades
+            ? AppStrings.emptyStates.noHighlights
+            : AppStrings.emptyStates.noHighlightsForGrade,
+        animationPath: AppAssets.animations.emptyHighlightList,
+      );
+    }
+    return ResponsiveGrid<Highlight>(
+      items: _pageHighlights,
+      itemBuilder: (context, h) => HighlightCard(highlight: h),
+    );
   }
 }

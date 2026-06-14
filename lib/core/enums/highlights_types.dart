@@ -1,12 +1,4 @@
-enum HighlightType {
-  quote,
-  studyFact,
-  important,
-  news,
-  note,
-  exam,
-  revision
-}
+enum HighlightType { quote, studyFact, important, news, note, exam, revision }
 
 extension HighlightTypeX on HighlightType {
   String get label {
@@ -19,11 +11,11 @@ extension HighlightTypeX on HighlightType {
         return 'تنبيه هام';
       case HighlightType.news:
         return 'خبر اليوم';
-      case HighlightType.exam :
+      case HighlightType.exam:
         return 'أمتحان';
-      case HighlightType.note :
+      case HighlightType.note:
         return 'ملاحظة';
-      case HighlightType.revision :
+      case HighlightType.revision:
         return 'مراجعة';
     }
   }

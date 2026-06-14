@@ -1,3 +1,1 @@
-enum ExamStage {
-  intro, inProgress, finalView, answersView
-}
+enum ExamStage { intro, inProgress, finalView, answersView }

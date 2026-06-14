@@ -1,10 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class DashboardCenterCubit extends Cubit<int>{
+class DashboardCenterCubit extends Cubit<int> {
   DashboardCenterCubit() : super(0);
 
   void updateScreenIndex(int index) {
-    if (index != state && index >= 0 && index <= 4) {
+    // Range bumped to 5 to make room for the new Payments center.
+    if (index != state && index >= 0 && index <= 5) {
       emit(index);
     }
   }
@@ -17,15 +18,19 @@ class DashboardCenterCubit extends Cubit<int>{
     updateScreenIndex(1);
   }
 
-  void navigatetoActiveHighlights() {
+  void navigateToExamsCenter() {
     updateScreenIndex(2);
   }
 
-  void navigateToExamsCenter() {
+  void navigatetoActiveHighlights() {
     updateScreenIndex(3);
   }
 
-   void navigateToStudentsCenter() {
+  void navigateToPaymentsCenter() {
     updateScreenIndex(4);
+  }
+
+  void navigateToUsersCenter() {
+    updateScreenIndex(5);
   }
 }

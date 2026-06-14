@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:mrmichaelashrafdashboard/core/config/app_assets.dart';
+import 'package:mrmichaelashrafdashboard/core/constants/app_assets.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
 import 'package:mrmichaelashrafdashboard/features/authentication/logic/admin_auth_cubit.dart';
@@ -30,15 +30,17 @@ class _SplashState extends State<Splash> {
   void _runFlowCheck() {
     final authState = _latestAuthState ?? context.read<AdminAuthCubit>().state;
 
-    // Skip routing while the auth cubit is still determining the user state.
+    // Skip routing while any auth action is still in flight — the splash
+    // should only decide once the cubit has settled on one of the terminal
+    // states (Authenticated / Unauthenticated / *Error).
     if (authState is AdminAuthInitial ||
-        authState is AdminLoggingIn ||
-        authState is AdminLoggingOut ||
-        authState is AdminLoading) {
+        authState is SignInLoading ||
+        authState is SignOutLoading ||
+        authState is CheckAuthStatusLoading) {
       return;
     }
 
-    final isLoggedIn = authState is AdminAuthenticated;
+    final isLoggedIn = authState is CheckAuthStatusAuthenticated;
     final isVerified = isLoggedIn ? authState.admin.emailVerified : false;
 
     context.read<DashboardFlowCubit>().checkDashboardFlow(
@@ -57,9 +59,9 @@ class _SplashState extends State<Splash> {
             listener: (context, authState) {
               _latestAuthState = authState;
 
-              if (authState is AdminAuthenticated ||
-                  authState is AdminUnauthenticated ||
-                  authState is AdminError) {
+              if (authState is CheckAuthStatusAuthenticated ||
+                  authState is CheckAuthStatusUnauthenticated ||
+                  authState is CheckAuthStatusError) {
                 _runFlowCheck();
               }
             },

@@ -1,0 +1,1 @@
+enum PlatformStatus { live, maintenance }

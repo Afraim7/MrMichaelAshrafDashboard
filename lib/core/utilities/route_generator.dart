@@ -15,7 +15,7 @@ class RouteGenerator {
       case AppRoutes.splash:
         return MaterialPageRoute(builder: (_) => const Splash());
       case AppRoutes.adminLogin:
-        return MaterialPageRoute(builder: (_) => AdminLogin());
+        return MaterialPageRoute(builder: (_) => AdminLoginScreen());
       case AppRoutes.controlPanel:
         return MaterialPageRoute(builder: (_) => DashboardHomeCenter());
       default:

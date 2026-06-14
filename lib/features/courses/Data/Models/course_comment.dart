@@ -21,7 +21,7 @@ class CourseComment {
       'userID': userID,
       'userDisplayName': userDisplayName,
       'text': text,
-      'date': date.millisecondsSinceEpoch,
+      'date': date.toIso8601String(),
       'stars': stars,
     };
   }
@@ -32,7 +32,10 @@ class CourseComment {
       userID: map['userID'] ?? '',
       userDisplayName: map['userDisplayName'] ?? 'مستخدم غير معروف',
       text: map['text'] ?? '',
-      date: DateTime.fromMillisecondsSinceEpoch(map['date']),
+      date:
+          map['date'] is int
+              ? DateTime.fromMillisecondsSinceEpoch(map['date'])
+              : DateTime.parse(map['date']),
       stars: (map['stars'] as num?)?.toDouble(),
     );
   }
