@@ -184,7 +184,8 @@ class _UserSheetState extends State<UserSheet> {
       final enr = enrollmentMap[c.courseID];
       return enr != null &&
           (enr.status == EnrollmentStatus.active ||
-              enr.status == EnrollmentStatus.ready);
+              enr.status == EnrollmentStatus.ready ||
+              enr.status == EnrollmentStatus.pending);
     }).toList();
 
     return Directionality(

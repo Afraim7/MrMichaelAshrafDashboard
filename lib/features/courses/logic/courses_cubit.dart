@@ -211,114 +211,97 @@ class CoursesCubit extends Cubit<CoursesState> {
       ..sort((a, b) => b.enrolledAt.compareTo(a.enrolledAt));
   }
 
-  /// Enrolls a student in a course — exact port of the student app's
-  /// `CoursesRepoImpl.enrollInCourse`, with an email→uid lookup prepended
-  /// because the admin form supplies an email rather than a uid.
+  /// Confirms a manual-transfer enrollment request: flips a `pending` row to
+  /// `ready`, writes the matching `payments` doc (manual gateway, marked
+  /// success), links its id back onto the enrollment, and bumps both counters —
+  /// all in one transaction. This is the admin-side mirror of the webhook that
+  /// auto-confirms wallet/Fawry payments. Counters move ONLY here because the
+  /// student's original `pending` request never counted.
   ///
-  /// Same logic as the source of truth: a prior `cancelled` enrollment is
-  /// REUSED (flipped back to `ready`) instead of creating a duplicate doc;
-  /// an existing `active`/`ready` enrollment blocks. Lands in `ready` (the
-  /// student still taps "start" to go `active`). One atomic batch bumps both
-  /// the course and user counters. `amountPaid == 0` writes no payment doc.
-  Future<void> enrollingAStudent({
-    required String courseId,
-    required String email,
-    double amountPaid = 0,
-    String paymentMethod = 'manual',
-    String transactionID = '',
+  /// [amount] is the price actually charged — the caller passes the course's
+  /// final price (discounted if the offer is live, else full). A non-positive
+  /// amount writes no payment doc but still confirms; `pending` always implies
+  /// a paid course, so that branch is just a guard.
+  Future<void> confirmEnrollment({
+    required CourseEnrollment enrollment,
+    required double amount,
   }) async {
-    // Admin enters an email; resolve it to the student's uid first.
-    final lookup = await _firestore
-        .collection('users')
-        .where('email', isEqualTo: email.trim())
-        .limit(1)
-        .get();
-    if (lookup.docs.isEmpty) {
-      throw 'لم نعثر على طالب بهذا البريد الإلكتروني';
-    }
-    final userId = lookup.docs.first.id;
-
-    // ─── Exact port of enrollInCourse from here ──────────────────────────
-    final existing = await _firestore
+    final enrollmentRef = _firestore
         .collection('enrollments')
-        .where('userID', isEqualTo: userId)
-        .where('courseID', isEqualTo: courseId)
-        .limit(1)
-        .get();
-
-    final batch = _firestore.batch();
+        .doc(enrollment.enrollmentID);
+    final courseRef = _firestore.collection('courses').doc(enrollment.courseID);
+    final userRef = _firestore.collection('users').doc(enrollment.userID);
+    // Pre-generate the payment ref so its id can be stamped onto the enrollment
+    // within the same transaction (payment doc first, then the link).
+    final paymentRef = _firestore.collection('payments').doc();
     final now = DateTime.now();
 
-    DocumentReference? paymentRef;
-    if (amountPaid > 0) {
-      paymentRef = _firestore.collection('payments').doc();
-    }
-
-    String enrollmentId;
-    DocumentReference enrollmentRef;
-
-    if (existing.docs.isNotEmpty) {
-      final doc = existing.docs.first;
-      final currentStatus = doc.data()['status'];
-
-      // Any active/ready enrollment blocks; a prior cancelled one is reused.
-      if (currentStatus == EnrollmentStatus.active.name ||
-          currentStatus == EnrollmentStatus.ready.name) {
-        throw 'هذا الطالب مسجّل بالفعل في الكورس';
+    await _firestore.runTransaction((tx) async {
+      // ── Read first (transactions forbid reads after any write) ──
+      final snap = await tx.get(enrollmentRef);
+      if (!snap.exists) {
+        throw 'لم نعد نجد طلب التسجيل، ربما تم حذفه.';
+      }
+      if (snap.data()?['status'] != EnrollmentStatus.pending.name) {
+        throw 'لم يعد هذا الطلب في انتظار التأكيد.';
       }
 
-      enrollmentRef = doc.reference;
-      enrollmentId = doc.id;
+      // ── Writes ──
+      if (amount > 0) {
+        final payment = PaymentRecord(
+          paymentID: paymentRef.id,
+          userID: enrollment.userID,
+          courseID: enrollment.courseID,
+          enrollmentID: enrollment.enrollmentID,
+          amount: amount,
+          paymentGateway: PaymentGateway.manual,
+          paymentMethod: 'manual',
+          transactionID: '',
+          status: PaymentRecordStatus.success,
+          paidAt: now,
+          createdAt: now,
+        );
+        tx.set(paymentRef, payment.toMap());
+      }
 
-      batch.update(enrollmentRef, {
+      tx.update(enrollmentRef, {
         'status': EnrollmentStatus.ready.name,
-        'enrolledAt': now.toIso8601String(),
-        'paymentID': paymentRef?.id,
+        'paymentID': amount > 0 ? paymentRef.id : null,
+        'pendingExpiresAt': null,
       });
-    } else {
-      enrollmentRef = _firestore.collection('enrollments').doc();
-      enrollmentId = enrollmentRef.id;
 
-      final enrollment = CourseEnrollment(
-        enrollmentID: enrollmentId,
-        userID: userId,
-        courseID: courseId,
-        status: EnrollmentStatus.ready,
-        enrolledAt: now,
-        paymentID: paymentRef?.id,
-      );
+      tx.update(courseRef, {'enrollmentCount': FieldValue.increment(1)});
 
-      batch.set(enrollmentRef, enrollment.toMap());
-    }
-
-    if (amountPaid > 0 && paymentRef != null) {
-      final payment = PaymentRecord(
-        paymentID: paymentRef.id,
-        userID: userId,
-        courseID: courseId,
-        enrollmentID: enrollmentId,
-        amount: amountPaid,
-        paymentGateway: PaymentGateway.manual,
-        paymentMethod: paymentMethod,
-        transactionID: transactionID,
-        status: PaymentRecordStatus.success,
-        paidAt: now,
-        createdAt: now,
-      );
-      batch.set(paymentRef, payment.toMap());
-    }
-
-    batch.update(_firestore.collection('courses').doc(courseId), {
-      'enrollmentCount': FieldValue.increment(1),
+      tx.set(userRef, {
+        'enrolledCoursesCount': FieldValue.increment(1),
+      }, SetOptions(merge: true));
     });
+  }
 
-    batch.set(
-      _firestore.collection('users').doc(userId),
-      {'enrolledCoursesCount': FieldValue.increment(1)},
-      SetOptions(merge: true),
-    );
+  /// Rejects a `pending` enrollment request: soft-cancels it (status →
+  /// `cancelled`, `pendingExpiresAt` cleared). Counters are left untouched — a
+  /// pending request was never counted. Guarded so only a still-pending row can
+  /// be rejected.
+  Future<void> rejectPendingEnrollment({
+    required CourseEnrollment enrollment,
+  }) async {
+    final enrollmentRef = _firestore
+        .collection('enrollments')
+        .doc(enrollment.enrollmentID);
 
-    await batch.commit();
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(enrollmentRef);
+      if (!snap.exists) {
+        throw 'لم نعد نجد طلب التسجيل، ربما تم حذفه.';
+      }
+      if (snap.data()?['status'] != EnrollmentStatus.pending.name) {
+        throw 'لم يعد هذا الطلب في انتظار التأكيد.';
+      }
+      tx.update(enrollmentRef, {
+        'status': EnrollmentStatus.cancelled.name,
+        'pendingExpiresAt': null,
+      });
+    });
   }
 
   /// Cancels a student's enrollment — exact port of the student app's

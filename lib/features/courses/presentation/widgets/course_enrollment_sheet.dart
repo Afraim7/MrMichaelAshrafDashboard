@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrmichaelashrafdashboard/core/constants/app_assets.dart';
 import 'package:mrmichaelashrafdashboard/core/constants/app_strings.dart';
 import 'package:mrmichaelashrafdashboard/core/enums/enrollment_status.dart';
 import 'package:mrmichaelashrafdashboard/core/themes/app_colors.dart';
+import 'package:mrmichaelashrafdashboard/core/utilities/currency_formatter.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/dashboard_helper.dart';
 import 'package:mrmichaelashrafdashboard/core/utilities/firebase_error_messages.dart';
 import 'package:mrmichaelashrafdashboard/features/courses/data/models/course.dart';
@@ -13,8 +13,6 @@ import 'package:mrmichaelashrafdashboard/features/courses/data/models/course_enr
 import 'package:mrmichaelashrafdashboard/features/courses/logic/courses_cubit.dart';
 import 'package:mrmichaelashrafdashboard/features/users/logic/users_cubit.dart';
 import 'package:mrmichaelashrafdashboard/shared/dialogs/app_dialog.dart';
-import 'package:mrmichaelashrafdashboard/shared/widgets/sheet_action_tile.dart';
-import 'package:mrmichaelashrafdashboard/shared/widgets/sheet_section_header.dart';
 
 class CourseEnrollmentSheet extends StatefulWidget {
   final Course course;
@@ -28,12 +26,11 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
-  String? _cancellingId;
-  bool _isEnrollFormOpen = false;
-  bool _isEnrolling = false;
-  final _enrollController = TextEditingController();
-  final _amountController = TextEditingController();
-  final _enrollFormKey = GlobalKey<FormState>();
+
+  /// The enrollment whose confirm / reject / cancel action is in flight — only
+  /// that tile shows a spinner and disables its buttons.
+  String? _busyId;
+
   List<CourseEnrollment> _enrollments = const [];
   Map<String, String> _namesMap = const {};
   Map<String, String> _emailsMap = const {};
@@ -42,13 +39,6 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
   void initState() {
     super.initState();
     _loadEnrollments();
-  }
-
-  @override
-  void dispose() {
-    _enrollController.dispose();
-    _amountController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadEnrollments() async {
@@ -95,81 +85,116 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
     }
   }
 
-  List<CourseEnrollment> get _visibleEnrollments => _enrollments
+  // Pending requests lead (they need action), then confirmed (active/ready).
+  // Cancelled rows stay hidden. Newest `enrolledAt` first within each group.
+  List<CourseEnrollment> get _visibleEnrollments {
+    int rank(EnrollmentStatus s) => switch (s) {
+      EnrollmentStatus.pending => 0,
+      EnrollmentStatus.active => 1,
+      EnrollmentStatus.ready => 1,
+      EnrollmentStatus.cancelled => 2,
+    };
+    return _enrollments
+        .where((e) => e.status != EnrollmentStatus.cancelled)
+        .toList()
+      ..sort((a, b) {
+        final byRank = rank(a.status).compareTo(rank(b.status));
+        return byRank != 0 ? byRank : b.enrolledAt.compareTo(a.enrolledAt);
+      });
+  }
+
+  // Header badge counts confirmed students only — a pending request isn't an
+  // "enrolled" student yet.
+  int get _confirmedTotal => _enrollments
       .where(
         (e) =>
             e.status == EnrollmentStatus.active ||
             e.status == EnrollmentStatus.ready,
       )
-      .toList();
+      .length;
 
-  int get _total => _visibleEnrollments.length;
+  Future<void> _confirmEnrollment(CourseEnrollment enrollment) async {
+    final name = _namesMap[enrollment.userID] ?? 'هذا الطالب';
+    // Amount charged = the course's live price (discounted if the offer is
+    // still active, full price otherwise) — taken automatically, no entry.
+    final amount = widget.course.getFinalPrice();
 
-  void _toggleEnrollForm() {
-    if (_isEnrolling) return;
-    setState(() {
-      _isEnrollFormOpen = !_isEnrollFormOpen;
-      if (_isEnrollFormOpen) {
-        // Pre-fill with the live price: the discounted amount while the offer
-        // is still active, the full price once it has expired. The admin can
-        // override it before enrolling.
-        _amountController.text = _formatAmount(widget.course.getFinalPrice());
-      } else {
-        _enrollController.clear();
-        _amountController.clear();
-      }
-    });
-  }
+    final ok = await _showConfirmDialog(
+      header: 'تأكيد تسجيل الطالب؟',
+      description:
+          'سيتم تأكيد تسجيل «$name» وتسجيل دفعة يدوية بقيمة '
+          '${CurrencyFormatter.withCode(amount, 'EGP')}، وسيصبح الكورس جاهزاً له.',
+      lottiePath: AppAssets.animations.checkedSuccess,
+      confirmTitle: 'تأكيد التسجيل',
+      confirmColor: AppColors.pastelGreen,
+    );
+    if (ok != true || !mounted) return;
 
-  /// Trims a trailing `.0` so a whole-number price shows as "25" not "25.0",
-  /// while keeping any genuine fractional part (e.g. "25.5").
-  String _formatAmount(double v) =>
-      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
-
-  Future<void> _submitEnrollForm() async {
-    if (_isEnrolling) return;
-    if (!_enrollFormKey.currentState!.validate()) return;
-
-    setState(() => _isEnrolling = true);
+    setState(() => _busyId = enrollment.enrollmentID);
     final cubit = context.read<CoursesCubit>();
     try {
-      await cubit.enrollingAStudent(
-        courseId: widget.course.courseID,
-        email: _enrollController.text.trim(),
-        amountPaid: double.tryParse(_amountController.text.trim()) ?? 0,
-      );
+      await cubit.confirmEnrollment(enrollment: enrollment, amount: amount);
       if (!mounted) return;
-      DashboardHelper.showSuccessBar(
-        context,
-        message: 'تم تسجيل الطالب في الكورس بنجاح',
-      );
-      setState(() {
-        _isEnrollFormOpen = false;
-        _enrollController.clear();
-        _amountController.clear();
-      });
+      DashboardHelper.showSuccessBar(context, message: 'تم تأكيد تسجيل الطالب');
       await _loadEnrollments();
     } catch (e) {
       if (!mounted) return;
-      // The cubit throws localized Arabic strings for the known failure
-      // cases; anything else gets translated through the Firebase helper.
+      // The cubit throws localized Arabic strings for the known failure cases;
+      // anything else gets translated through the Firebase helper.
       final msg = e is String
           ? e
           : FirebaseErrorTranslator.translate(
               e,
-              fallback: 'تعذّر تسجيل الطالب، حاول مجددًا',
+              fallback: 'تعذّر تأكيد التسجيل، حاول مجددًا',
             ).message;
       DashboardHelper.showErrorBar(context, error: msg);
     } finally {
-      if (mounted) setState(() => _isEnrolling = false);
+      if (mounted) setState(() => _busyId = null);
+    }
+  }
+
+  Future<void> _rejectEnrollment(CourseEnrollment enrollment) async {
+    final name = _namesMap[enrollment.userID] ?? 'هذا الطالب';
+    final ok = await _showConfirmDialog(
+      header: 'رفض طلب التسجيل؟',
+      description: 'سيتم رفض طلب «$name» للتسجيل في الكورس. يمكنه إرسال طلب جديد لاحقًا.',
+      lottiePath: AppAssets.animations.redWarning,
+      confirmTitle: 'تأكيد الرفض',
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _busyId = enrollment.enrollmentID);
+    final cubit = context.read<CoursesCubit>();
+    try {
+      await cubit.rejectPendingEnrollment(enrollment: enrollment);
+      if (!mounted) return;
+      DashboardHelper.showSuccessBar(context, message: 'تم رفض طلب التسجيل');
+      await _loadEnrollments();
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is String
+          ? e
+          : FirebaseErrorTranslator.translate(
+              e,
+              fallback: 'تعذّر رفض الطلب، حاول مجددًا',
+            ).message;
+      DashboardHelper.showErrorBar(context, error: msg);
+    } finally {
+      if (mounted) setState(() => _busyId = null);
     }
   }
 
   Future<void> _cancelEnrollment(CourseEnrollment enrollment) async {
-    final ok = await _confirmCancel();
+    final ok = await _showConfirmDialog(
+      header: 'إلغاء تسجيل الطالب؟',
+      description:
+          'سيفقد الطالب الوصول إلى محتوى الكورس. يمكن إعادة تسجيله لاحقًا.',
+      lottiePath: AppAssets.animations.yellowWarning,
+      confirmTitle: 'تأكيد الإلغاء',
+    );
     if (ok != true || !mounted) return;
 
-    setState(() => _cancellingId = enrollment.enrollmentID);
+    setState(() => _busyId = enrollment.enrollmentID);
     final cubit = context.read<CoursesCubit>();
     try {
       await cubit.cancellingCourseEnrollment(
@@ -187,23 +212,29 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
       );
       DashboardHelper.showErrorBar(context, error: translated.message);
     } finally {
-      if (mounted) setState(() => _cancellingId = null);
+      if (mounted) setState(() => _busyId = null);
     }
   }
 
-  Future<bool?> _confirmCancel() {
+  Future<bool?> _showConfirmDialog({
+    required String header,
+    required String description,
+    required String lottiePath,
+    required String confirmTitle,
+    Color? confirmColor,
+  }) {
     return showDialog<bool>(
       context: context,
       barrierColor: Colors.black54,
       builder: (dctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AppDialog(
-          header: 'إلغاء تسجيل الطالب؟',
-          description:
-              'سيفقد الطالب الوصول إلى محتوى الكورس. يمكن إعادة تسجيله لاحقًا.',
-          lottiePath: AppAssets.animations.yellowWarning,
+          header: header,
+          description: description,
+          lottiePath: lottiePath,
           cancelTitle: 'تراجع',
-          confirmTitle: 'تأكيد الإلغاء',
+          confirmTitle: confirmTitle,
+          confirmColor: confirmColor,
           onConfirm: () => Navigator.of(dctx).pop(true),
         ),
       ),
@@ -232,16 +263,11 @@ class _CourseEnrollmentsSheetState extends State<CourseEnrollmentSheet> {
                 enrollments: _visibleEnrollments,
                 namesMap: _namesMap,
                 emailsMap: _emailsMap,
-                total: _total,
-                cancellingId: _cancellingId,
+                total: _confirmedTotal,
+                busyId: _busyId,
+                onConfirm: _confirmEnrollment,
+                onReject: _rejectEnrollment,
                 onCancel: _cancelEnrollment,
-                onToggleEnrollForm: _toggleEnrollForm,
-                onSubmitEnrollForm: _submitEnrollForm,
-                isEnrollFormOpen: _isEnrollFormOpen,
-                isEnrolling: _isEnrolling,
-                enrollController: _enrollController,
-                amountController: _amountController,
-                enrollFormKey: _enrollFormKey,
               ),
           ],
         ),
@@ -431,32 +457,20 @@ class _LoadedContent extends StatelessWidget {
   final Map<String, String> namesMap;
   final Map<String, String> emailsMap;
   final int total;
-  final String? cancellingId;
+  final String? busyId;
+  final void Function(CourseEnrollment) onConfirm;
+  final void Function(CourseEnrollment) onReject;
   final void Function(CourseEnrollment) onCancel;
-
-  // Inline enroll-form plumbing — owned by the stateful parent.
-  final VoidCallback onToggleEnrollForm;
-  final VoidCallback onSubmitEnrollForm;
-  final bool isEnrollFormOpen;
-  final bool isEnrolling;
-  final TextEditingController enrollController;
-  final TextEditingController amountController;
-  final GlobalKey<FormState> enrollFormKey;
 
   const _LoadedContent({
     required this.enrollments,
     required this.namesMap,
     required this.emailsMap,
     required this.total,
-    required this.cancellingId,
+    required this.busyId,
+    required this.onConfirm,
+    required this.onReject,
     required this.onCancel,
-    required this.onToggleEnrollForm,
-    required this.onSubmitEnrollForm,
-    required this.isEnrollFormOpen,
-    required this.isEnrolling,
-    required this.enrollController,
-    required this.amountController,
-    required this.enrollFormKey,
   });
 
   @override
@@ -467,7 +481,7 @@ class _LoadedContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Section label + count badge ────────────────────────────────
+        // ── Section label + confirmed-count badge ──────────────────────
         Row(
           children: [
             const Icon(
@@ -529,241 +543,14 @@ class _LoadedContent extends StatelessWidget {
                 enrollment: e,
                 userName: name,
                 userEmail: email,
-                isCancelling: cancellingId == e.enrollmentID,
+                isBusy: busyId == e.enrollmentID,
+                onConfirm: () => onConfirm(e),
+                onReject: () => onReject(e),
                 onCancel: () => onCancel(e),
               );
             },
           ),
-
-        const SizedBox(height: 50),
-
-        // ── Admin actions ─────────────────────────────────────────────
-        SheetSectionHeader(
-          label: 'إجراءات الإدارة',
-          icon: Icons.admin_panel_settings_outlined,
-        ),
-        const SizedBox(height: 14),
-        SheetActionTile(
-          icon: Icons.person_add_alt_1_rounded,
-          accentColor: AppColors.pastelGreen,
-          title: 'تسجيل طالب يدويًا',
-          subtitle: isEnrollFormOpen
-              ? 'أدخل البريد الإلكتروني للطالب أدناه'
-              : 'أدخل بريد الطالب لتسجيله مباشرة في الكورس',
-          onTap: onToggleEnrollForm,
-        ),
-
-        // Animated reveal of the inline enroll form — drops in below the
-        // action tile so the admin's focus stays in place instead of
-        // jumping to a modal.
-        AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          alignment: Alignment.topCenter,
-          child: isEnrollFormOpen
-              ? _EnrollInlineForm(
-                  controller: enrollController,
-                  amountController: amountController,
-                  formKey: enrollFormKey,
-                  isSubmitting: isEnrolling,
-                  onAdd: onSubmitEnrollForm,
-                  onCancel: onToggleEnrollForm,
-                )
-              : const SizedBox.shrink(),
-        ),
       ],
-    );
-  }
-}
-
-class _EnrollInlineForm extends StatelessWidget {
-  final TextEditingController controller;
-  final TextEditingController amountController;
-  final GlobalKey<FormState> formKey;
-  final bool isSubmitting;
-  final VoidCallback onAdd;
-  final VoidCallback onCancel;
-
-  const _EnrollInlineForm({
-    required this.controller,
-    required this.amountController,
-    required this.formKey,
-    required this.isSubmitting,
-    required this.onAdd,
-    required this.onCancel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final shahr = GoogleFonts.scheherazadeNew();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceAltDark,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.pastelGreen.withAlpha(40),
-            width: 1,
-          ),
-        ),
-        child: Form(
-          key: formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: controller,
-                autofocus: true,
-                enabled: !isSubmitting,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                style: shahr.copyWith(
-                  fontSize: 16,
-                  color: AppColors.textPrimaryDark,
-                ),
-                validator: (v) {
-                  final t = v?.trim() ?? '';
-                  if (t.isEmpty) return 'أدخل البريد الإلكتروني للطالب';
-                  if (!t.contains('@') || !t.contains('.')) {
-                    return 'صيغة البريد غير صحيحة';
-                  }
-                  return null;
-                },
-                decoration: InputDecoration(
-                  hintText: 'student@example.com',
-                  hintStyle: shahr.copyWith(
-                    fontSize: 14,
-                    color: AppColors.neutral600,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.alternate_email_rounded,
-                    color: AppColors.neutral500,
-                    size: 20,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.surfaceDark,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.pastelGreen,
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              // Amount paid — pre-filled with the live (discounted/full) price
-              // by the parent; the admin can edit or zero it out before saving.
-              TextFormField(
-                controller: amountController,
-                enabled: !isSubmitting,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                ],
-                onFieldSubmitted: (_) => isSubmitting ? null : onAdd(),
-                style: shahr.copyWith(
-                  fontSize: 16,
-                  color: AppColors.textPrimaryDark,
-                ),
-                validator: (v) {
-                  final t = v?.trim() ?? '';
-                  if (t.isEmpty) return 'أدخل المبلغ المدفوع';
-                  final n = double.tryParse(t);
-                  if (n == null || n < 0) return 'مبلغ غير صحيح';
-                  return null;
-                },
-                decoration: InputDecoration(
-                  hintText: '0',
-                  hintStyle: shahr.copyWith(
-                    fontSize: 14,
-                    color: AppColors.neutral600,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.payments_outlined,
-                    color: AppColors.neutral500,
-                    size: 20,
-                  ),
-                  suffixText: 'ج.م',
-                  suffixStyle: GoogleFonts.amiri(
-                    fontSize: 13,
-                    color: AppColors.neutral500,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.surfaceDark,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.pastelGreen,
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: isSubmitting ? null : onCancel,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.appNavy,
-                    ),
-                    child: Text('إلغاء', style: shahr.copyWith(fontSize: 15)),
-                  ),
-                  const SizedBox(width: 4),
-                  TextButton(
-                    onPressed: isSubmitting ? null : onAdd,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.pastelGreen,
-                    ),
-                    child: isSubmitting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.pastelGreen,
-                              ),
-                            ),
-                          )
-                        : Text(
-                            'إضافة',
-                            style: shahr.copyWith(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -772,14 +559,18 @@ class _EnrollmentTile extends StatelessWidget {
   final CourseEnrollment enrollment;
   final String userName;
   final String userEmail;
-  final bool isCancelling;
+  final bool isBusy;
+  final VoidCallback onConfirm;
+  final VoidCallback onReject;
   final VoidCallback onCancel;
 
   const _EnrollmentTile({
     required this.enrollment,
     required this.userName,
     required this.userEmail,
-    required this.isCancelling,
+    required this.isBusy,
+    required this.onConfirm,
+    required this.onReject,
     required this.onCancel,
   });
 
@@ -791,7 +582,8 @@ class _EnrollmentTile extends StatelessWidget {
     final accent = _accentFor(enrollment.status);
     final bg = accent.withAlpha(18);
     final initial = userName.trim().isNotEmpty ? userName.trim()[0] : '؟';
-    final isCancelled = enrollment.status == EnrollmentStatus.cancelled;
+    final isPending = enrollment.status == EnrollmentStatus.pending;
+    final expiryHint = isPending ? _expiryHint(enrollment.pendingExpiresAt) : null;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -800,102 +592,179 @@ class _EnrollmentTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: accent.withAlpha(45), width: 1),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: accent.withAlpha(35),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                initial,
-                style: shahr.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: accent,
-                  height: 1.5,
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: accent.withAlpha(35),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: shahr.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: accent,
+                      height: 1.5,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-          // Name + email
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  userName,
-                  style: shahr.copyWith(
-                    fontSize: 17,
-                    color: AppColors.textPrimaryDark,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (userEmail.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    userEmail,
-                    style: amiri.copyWith(
-                      fontSize: 12,
-                      color: AppColors.neutral500,
-                      height: 1.3,
+              // Name + email (+ pending expiry hint)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName,
+                      style: shahr.copyWith(
+                        fontSize: 17,
+                        color: AppColors.textPrimaryDark,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
-          ),
+                    if (userEmail.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        userEmail,
+                        style: amiri.copyWith(
+                          fontSize: 12,
+                          color: AppColors.neutral500,
+                          height: 1.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (expiryHint != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.timer_outlined,
+                            size: 12,
+                            color: AppColors.royalYellow,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            expiryHint,
+                            style: amiri.copyWith(
+                              fontSize: 11,
+                              color: AppColors.royalYellow,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
 
-          const SizedBox(width: 10),
+              const SizedBox(width: 10),
 
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
               _ResultChip(
                 label: _labelFor(enrollment.status),
                 color: accent,
                 filled: true,
               ),
+
+              // Active/ready tiles keep the inline cancel control.
+              if (!isPending) ...[
+                const SizedBox(width: 8),
+                isBusy
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(
+                            AppColors.tomatoRed.withAlpha(200),
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        onPressed: onCancel,
+                        tooltip: 'إلغاء التسجيل',
+                        icon: const Icon(
+                          Icons.cancel_rounded,
+                          color: AppColors.tomatoRed,
+                          size: 22,
+                        ),
+                      ),
+              ],
             ],
           ),
 
-          const SizedBox(width: 8),
-
-          if (!isCancelled)
-            isCancelling
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
+          // Pending tiles get the confirm / reject action row.
+          if (isPending) ...[
+            const SizedBox(height: 12),
+            if (isBusy)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(
-                        AppColors.tomatoRed.withAlpha(200),
-                      ),
-                    ),
-                  )
-                : IconButton(
-                    onPressed: onCancel,
-                    tooltip: 'إلغاء التسجيل',
-                    icon: const Icon(
-                      Icons.cancel_rounded,
-                      color: AppColors.tomatoRed,
-                      size: 22,
+                      strokeWidth: 2.2,
+                      valueColor: AlwaysStoppedAnimation(AppColors.pastelGreen),
                     ),
                   ),
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionButton(
+                      label: 'تأكيد',
+                      icon: Icons.check_rounded,
+                      color: AppColors.pastelGreen,
+                      filled: true,
+                      onTap: onConfirm,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ActionButton(
+                      label: 'رفض',
+                      icon: Icons.close_rounded,
+                      color: AppColors.tomatoRed,
+                      onTap: onReject,
+                    ),
+                  ),
+                ],
+              ),
+          ],
         ],
       ),
     );
+  }
+
+  /// Remaining-time label for a pending request's 3-day window.
+  String? _expiryHint(DateTime? expiresAt) {
+    if (expiresAt == null) return null;
+    final left = expiresAt.difference(DateTime.now());
+    if (left.isNegative) return 'انتهت صلاحية الطلب';
+    final days = left.inDays;
+    if (days >= 1) return 'ينتهي خلال $days ${days == 1 ? 'يوم' : 'أيام'}';
+    final hours = left.inHours;
+    if (hours >= 1) return 'ينتهي خلال $hours ${hours == 1 ? 'ساعة' : 'ساعات'}';
+    return 'ينتهي قريبًا';
   }
 
   Color _accentFor(EnrollmentStatus s) => switch (s) {
@@ -908,9 +777,61 @@ class _EnrollmentTile extends StatelessWidget {
   String _labelFor(EnrollmentStatus s) => switch (s) {
     EnrollmentStatus.active => 'نشط',
     EnrollmentStatus.ready => 'جاهز للبدء',
-    EnrollmentStatus.pending => 'بانتظار الدفع',
+    EnrollmentStatus.pending => 'بانتظار التأكيد',
     EnrollmentStatus.cancelled => 'ملغى',
   };
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool filled;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.filled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: filled ? color : color.withAlpha(22),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: filled
+                ? null
+                : Border.all(color: color.withAlpha(70), width: 1),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: filled ? Colors.white : color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: GoogleFonts.scheherazadeNew(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: filled ? Colors.white : color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ResultChip extends StatelessWidget {

@@ -12,6 +12,11 @@ class CourseEnrollment {
   final DateTime enrolledAt;
   final DateTime? completedAt;
 
+  /// Deadline for a `pending` request (set to now + 3 days by the student app
+  /// when the request is created). Cleared to null once the enrollment is
+  /// confirmed (`ready`) or rejected (`cancelled`).
+  final DateTime? pendingExpiresAt;
+
   /// HEART OF THE SYSTEM
   /// {
   ///   lessonID: {
@@ -31,6 +36,7 @@ class CourseEnrollment {
     required this.enrolledAt,
     this.paymentID,
     this.completedAt,
+    this.pendingExpiresAt,
     Map<String, dynamic>? progressMap,
   }) : progressMap = progressMap ?? const {};
 
@@ -43,6 +49,7 @@ class CourseEnrollment {
       'status': status.name,
       'enrolledAt': enrolledAt.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
+      'pendingExpiresAt': pendingExpiresAt?.toIso8601String(),
       'progressMap': progressMap,
     };
   }
@@ -59,6 +66,7 @@ class CourseEnrollment {
       ),
       enrolledAt: _parseDateTime(map['enrolledAt']) ?? DateTime.now(),
       completedAt: _parseDateTime(map['completedAt']),
+      pendingExpiresAt: _parseDateTime(map['pendingExpiresAt']),
       progressMap:
           map['progressMap'] != null
               ? Map<String, dynamic>.from(map['progressMap'])
